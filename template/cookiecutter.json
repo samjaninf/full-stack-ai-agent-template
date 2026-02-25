@@ -106,7 +106,7 @@
   "use_openai_embeddings": false,
   "use_voyage_embeddings": false,
   "use_sentence_transformers": false,
-  "enable_reranker": "none",
+  "enable_reranker": false,
   "use_cohere_reranker": false,
   "use_cross_encoder_reranker": false,
   "document_parser": "python_native",

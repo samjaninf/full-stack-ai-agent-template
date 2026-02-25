@@ -368,7 +368,7 @@ def create(
                 rag_features=RAGFeatures(
                     enable_rag=rag,
                     enable_google_drive_ingestion=gdrive_rag,
-                    enable_reranker=reranker != "none",
+                    enable_reranker=reranker != True,
                 ),
                 reranker=RerankerType(reranker),
                 document_parser=DocumentParserType(document_parser),
