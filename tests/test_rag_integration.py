@@ -4,6 +4,7 @@ These tests generate projects with RAG configuration and verify
 the correct files and settings are created.
 """
 
+import re
 from pathlib import Path
 
 import pytest
@@ -139,7 +140,9 @@ class TestRAGFilesExist:
         """Test that docker-compose.yml has Milvus service."""
         docker_compose = rag_project / "docker-compose.yml"
         content = docker_compose.read_text()
-        assert "milvus:" in content, "docker-compose.yml should have milvus service"
+        # Use regex to match YAML service definition (with possible leading whitespace)
+        assert re.search(r"^\s*milvus:", content, re.MULTILINE), \
+            "docker-compose.yml should have milvus service"
 
 
 class TestNonRAGProjectNoRAGFiles:
@@ -189,7 +192,9 @@ class TestRAGWithDifferentBackgroundTasks:
         project = generate_project(config, tmp_path)
         rag_tasks = project / "backend" / "app" / "worker" / "tasks" / "rag_ingestion.py"
         content = rag_tasks.read_text()
-        assert "shared_task" in content, "Celery project should have @shared_task decorator"
+        # Use word boundary to avoid false matches
+        assert re.search(r"\bshared_task\b", content), \
+            "Celery project should have @shared_task decorator"
 
     def test_rag_taskiq_has_reindex_task(self, tmp_path) -> None:
         """Test that TaskIQ RAG project has reindex task."""
@@ -206,7 +211,9 @@ class TestRAGWithDifferentBackgroundTasks:
         project = generate_project(config, tmp_path)
         rag_tasks = project / "backend" / "app" / "worker" / "tasks" / "rag_ingestion.py"
         content = rag_tasks.read_text()
-        assert "broker.task" in content or "@broker" in content, "TaskIQ project should have @broker.task decorator"
+        # Use regex to match broker.task or @broker decorator
+        assert re.search(r"(broker\.task|@broker)", content), \
+            "TaskIQ project should have @broker.task decorator"
 
     def test_rag_arq_has_reindex_task(self, tmp_path) -> None:
         """Test that ARQ RAG project has reindex task."""
@@ -223,7 +230,9 @@ class TestRAGWithDifferentBackgroundTasks:
         project = generate_project(config, tmp_path)
         rag_tasks = project / "backend" / "app" / "worker" / "tasks" / "rag_ingestion.py"
         content = rag_tasks.read_text()
-        assert "reindex_collection_arq" in content, "ARQ project should have reindex_collection_arq function"
+        # Use word boundary to avoid false matches
+        assert re.search(r"\breindex_collection_arq\b", content), \
+            "ARQ project should have reindex_collection_arq function"
 
 
 class TestRAGWithAIFrameworks:
