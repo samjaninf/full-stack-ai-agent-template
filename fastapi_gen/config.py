@@ -300,9 +300,7 @@ class ProjectConfig(BaseModel):
             AIFrameworkType.LANGGRAPH,
             AIFrameworkType.DEEPAGENTS,
         ):
-            raise ValueError(
-                "LangSmith requires LangChain, LangGraph, or DeepAgents framework"
-            )
+            raise ValueError("LangSmith requires LangChain, LangGraph, or DeepAgents framework")
 
         # WebSocket JWT auth requires main JWT auth
         if self.websocket_auth == WebSocketAuthType.JWT and self.auth not in (

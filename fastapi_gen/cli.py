@@ -178,7 +178,11 @@ def new(output: Path | None, no_input: bool, name: str | None) -> None:
 @click.option("--prometheus", is_flag=True, help="Enable Prometheus metrics")
 @click.option("--file-storage", is_flag=True, help="Enable S3/MinIO file storage")
 @click.option("--webhooks", is_flag=True, help="Enable webhooks support")
-@click.option("--langsmith", is_flag=True, help="Enable LangSmith observability (LangChain/LangGraph/DeepAgents)")
+@click.option(
+    "--langsmith",
+    is_flag=True,
+    help="Enable LangSmith observability (LangChain/LangGraph/DeepAgents)",
+)
 @click.option(
     "--python-version",
     type=click.Choice(["3.11", "3.12", "3.13"]),
