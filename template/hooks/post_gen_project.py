@@ -102,6 +102,7 @@ if not enable_ai_agent:
         remove_file(os.path.join(frontend_src, "types", "chat.ts"))
         remove_file(os.path.join(frontend_src, "stores", "chat-store.ts"))
         remove_file(os.path.join(frontend_src, "stores", "local-chat-store.ts"))
+        remove_file(os.path.join(frontend_src, "stores", "chat-sidebar-store.ts"))
         # Remove chat page route
         if enable_i18n:
             remove_dir(os.path.join(frontend_src, "app", "[locale]", "(dashboard)", "chat"))
