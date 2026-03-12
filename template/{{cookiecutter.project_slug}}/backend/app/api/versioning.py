@@ -6,13 +6,15 @@ This module provides tools for managing API version deprecation:
 - RFC 8594 compliant deprecation headers
 """
 
+import logging
 from collections.abc import Callable
 from datetime import datetime
 from functools import wraps
 
-import logfire
 from fastapi import Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+
+logger = logging.getLogger(__name__)
 
 
 class VersionDeprecationMiddleware(BaseHTTPMiddleware):
@@ -96,13 +98,11 @@ class VersionDeprecationMiddleware(BaseHTTPMiddleware):
 
     def _log_deprecated_usage(self, request: Request, version: str) -> None:
         """Log usage of deprecated API version for monitoring."""
-        logfire.warn(
-            "Deprecated API version accessed",
-            version=version,
-            path=request.url.path,
-            method=request.method,
-            client_ip=request.client.host if request.client else None,
-            user_agent=request.headers.get("User-Agent"),
+        logger.warning(
+            "Deprecated API version accessed: %s %s %s",
+            version,
+            request.method,
+            request.url.path,
         )
 
 

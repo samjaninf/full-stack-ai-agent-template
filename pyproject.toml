@@ -1,6 +1,6 @@
 [project]
 name = "fastapi-fullstack"
-version = "0.1.18"
+version = "0.2.1"
 description = "Full-stack FastAPI + Next.js template generator with PydanticAI/LangChain agents, WebSocket streaming, 20+ enterprise integrations, and Logfire/LangSmith observability. Ship AI apps fast. CLI tool to generate production-ready FastAPI + Next.js projects with AI agents, auth, and observability."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -71,9 +71,9 @@ docs = [
 fastapi-fullstack = "fastapi_gen.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template"
-Documentation = "https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template#readme"
-Repository = "https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template"
+Homepage = "https://github.com/vstorm-co/full-stack-ai-agent-template"
+Documentation = "https://github.com/vstorm-co/full-stack-ai-agent-template#readme"
+Repository = "https://github.com/vstorm-co/full-stack-ai-agent-template"
 
 [build-system]
 requires = ["hatchling"]

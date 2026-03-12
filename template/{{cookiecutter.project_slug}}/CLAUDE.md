@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**{{ cookiecutter.project_name }}** - FastAPI application generated with [Full-Stack FastAPI + Next.js Template](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template).
+**{{ cookiecutter.project_name }}** - FastAPI application generated with [Full-Stack FastAPI + Next.js Template](https://github.com/vstorm-co/full-stack-ai-agent-template).
 
 **Stack:** FastAPI + Pydantic v2
 {%- if cookiecutter.use_postgresql %}, PostgreSQL (async){%- endif %}
@@ -98,5 +98,8 @@ ANTHROPIC_API_KEY=sk-ant-...
 {%- endif %}
 {%- if cookiecutter.enable_logfire %}
 LOGFIRE_TOKEN=your-token
+{%- endif %}
+{%- if cookiecutter.enable_langsmith %}
+LANGCHAIN_API_KEY=your-api-key
 {%- endif %}
 ```

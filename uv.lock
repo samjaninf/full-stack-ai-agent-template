@@ -324,7 +324,7 @@ wheels = [
 
 [[package]]
 name = "fastapi-fullstack"
-version = "0.1.17"
+version = "0.2.1"
 source = { editable = "." }
 dependencies = [
     { name = "click" },

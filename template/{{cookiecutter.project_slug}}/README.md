@@ -1,8 +1,8 @@
 # Full-Stack FastAPI + Next.js Template for AI/LLM Applications
 
 <p align="center">
-  <a href="https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/stargazers"><img src="https://img.shields.io/github/stars/vstorm-co/full-stack-fastapi-nextjs-llm-template?style=flat&logo=github&color=yellow" alt="GitHub Stars"></a>
-  <a href="https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/LICENSE"><img src="https://img.shields.io/github/license/vstorm-co/full-stack-fastapi-nextjs-llm-template?color=blue" alt="License"></a>
+  <a href="https://github.com/vstorm-co/full-stack-ai-agent-template/stargazers"><img src="https://img.shields.io/github/stars/vstorm-co/full-stack-ai-agent-template?style=flat&logo=github&color=yellow" alt="GitHub Stars"></a>
+  <a href="https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/LICENSE"><img src="https://img.shields.io/github/license/vstorm-co/full-stack-ai-agent-template?color=blue" alt="License"></a>
   <a href="https://www.python.org/"><img src="https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?logo=python&logoColor=white" alt="Python"></a>
   <a href="https://pypi.org/project/fastapi-fullstack/"><img src="https://img.shields.io/pypi/v/fastapi-fullstack?color=green&logo=pypi&logoColor=white" alt="PyPI"></a>
   <img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage">
@@ -95,7 +95,7 @@ This template gives you all of that out of the box, with **20+ configurable inte
 ## 🎬 Demo
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/app_start.gif" alt="FastAPI Fullstack Generator Demo">
+  <img src="https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/app_start.gif" alt="FastAPI Fullstack Generator Demo">
 </p>
 
 ---
@@ -292,26 +292,26 @@ make create-admin  # Create admin user
 ### Chat Interface
 | Light Mode | Dark Mode |
 |:---:|:---:|
-| ![Chat Light](https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/new_chat_light.png) | ![Chat Dark](https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/new_chat_dark.png) |
+| ![Chat Light](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/new_chat_light.png) | ![Chat Dark](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/new_chat_dark.png) |
 
 ### Authentication
 | Register | Login |
 |:---:|:---:|
-| ![Register](https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/new_register.png) | ![Login](https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/new_login.png) |
+| ![Register](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/new_register.png) | ![Login](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/new_login.png) |
 
 ### Observability
 | Logfire (PydanticAI) | LangSmith (LangChain) |
 |:---:|:---:|
-| ![Logfire](https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/logfire.png) | ![LangSmith](https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/langsmith.png) |
+| ![Logfire](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/logfire.png) | ![LangSmith](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/langsmith.png) |
 
 ### Admin, Monitoring & API
 | Celery Flower | SQLAdmin Panel |
 |:---:|:---:|
-| ![Flower](https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/flower.png) | ![Admin](https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/admin.png) |
+| ![Flower](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/flower.png) | ![Admin](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/admin.png) |
 
 | API Documentation |
 |:---:|
-| ![API Docs](https://raw.githubusercontent.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/main/assets/docs_2.png) |
+| ![API Docs](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/docs_2.png) |
 
 ---
 
@@ -375,7 +375,7 @@ graph LR
 | **Services** | Business logic, orchestration |
 | **Repositories** | Data access, queries |
 
-See [Architecture Documentation](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/architecture.md) for details.
+See [Architecture Documentation](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/docs/architecture.md) for details.
 
 ---
 
@@ -479,7 +479,7 @@ Each framework has its own observability solution:
 | **PydanticAI** | [Logfire](https://logfire.pydantic.dev) | Agent runs, tool calls, token usage |
 | **LangChain** | [LangSmith](https://smith.langchain.com) | Traces, feedback, datasets |
 
-See [AI Agent Documentation](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/ai-agent.md) for more.
+See [AI Agent Documentation](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/docs/ai-agent.md) for more.
 
 ---
 
@@ -1059,18 +1059,18 @@ fastapi-fullstack new
 
 | Document | Description |
 |----------|-------------|
-| [Architecture](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/architecture.md) | Repository + Service pattern, layered design |
-| [Frontend](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/frontend.md) | Next.js setup, auth, state management |
-| [AI Agent](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/ai-agent.md) | PydanticAI, tools, WebSocket streaming |
-| [Observability](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/observability.md) | Logfire integration, tracing, metrics |
-| [Deployment](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/deployment.md) | Docker, Kubernetes, production setup |
-| [Development](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/docs/development.md) | Local setup, testing, debugging |
+| [Architecture](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/docs/architecture.md) | Repository + Service pattern, layered design |
+| [Frontend](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/docs/frontend.md) | Next.js setup, auth, state management |
+| [AI Agent](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/docs/ai-agent.md) | PydanticAI, tools, WebSocket streaming |
+| [Observability](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/docs/observability.md) | Logfire integration, tracing, metrics |
+| [Deployment](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/docs/deployment.md) | Docker, Kubernetes, production setup |
+| [Development](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/docs/development.md) | Local setup, testing, debugging |
 
 ---
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=vstorm-co/full-stack-fastapi-nextjs-llm-template&type=date&legend=top-left)](https://www.star-history.com/#vstorm-co/full-stack-fastapi-nextjs-llm-template&type=date&legend=top-left)
+[![Star History Chart](https://api.star-history.com/svg?repos=vstorm-co/full-stack-ai-agent-template&type=date&legend=top-left)](https://www.star-history.com/#vstorm-co/full-stack-ai-agent-template&type=date&legend=top-left)
 
 ---
 
@@ -1087,13 +1087,13 @@ This project is inspired by:
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please read our [Contributing Guide](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/CONTRIBUTING.md) for details.
+Contributions are welcome! Please read our [Contributing Guide](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/CONTRIBUTING.md) for details.
 
 ---
 
 ## 📄 License
 
-MIT License - see [LICENSE](https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template/blob/main/LICENSE) for details.
+MIT License - see [LICENSE](https://github.com/vstorm-co/full-stack-ai-agent-template/blob/main/LICENSE) for details.
 
 ---
 

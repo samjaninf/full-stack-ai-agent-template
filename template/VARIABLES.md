@@ -234,6 +234,7 @@ These variables are set automatically by the generator.
 | `use_anthropic` | bool | `false` | Anthropic is selected | Computed from `llm_provider` |
 | `use_openrouter` | bool | `false` | OpenRouter is selected | Computed from `llm_provider` |
 | `enable_conversation_persistence` | bool | `false` | Persist AI conversations to database | Requires `enable_ai_agent` and database |
+| `enable_langsmith` | bool | `false` | Enable LangSmith observability (tracing, prompt management) | Requires LangChain, LangGraph, or DeepAgents |
 
 **Notes:**
 

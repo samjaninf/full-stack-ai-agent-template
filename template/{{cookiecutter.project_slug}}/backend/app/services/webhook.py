@@ -5,18 +5,20 @@
 import hashlib
 import hmac
 import json
+import logging
 import secrets
 from datetime import UTC, datetime
 from uuid import UUID
 
 import httpx
-import logfire
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError
 from app.db.models.webhook import Webhook, WebhookDelivery
 from app.repositories import webhook_repo
 from app.schemas.webhook import WebhookCreate, WebhookUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class WebhookService:
@@ -115,11 +117,9 @@ class WebhookService:
             try:
                 await self._deliver(webhook, event_type, payload)
             except Exception as e:
-                logfire.error(
-                    "Webhook delivery failed",
-                    webhook_id=str(webhook.id),
-                    event_type=event_type,
-                    error=str(e),
+                logger.error(
+                    "Webhook delivery failed: webhook_id=%s event=%s error=%s",
+                    webhook.id, event_type, e,
                 )
 
     async def _deliver(
@@ -161,23 +161,18 @@ class WebhookService:
             delivery.success = 200 <= response.status_code < 300
             delivery.delivered_at = datetime.now(UTC)
 
-            logfire.info(
-                "Webhook delivered",
-                webhook_id=str(webhook.id),
-                event_type=event_type,
-                status_code=response.status_code,
-                success=delivery.success,
+            logger.info(
+                "Webhook delivered: webhook_id=%s event=%s status=%s",
+                webhook.id, event_type, response.status_code,
             )
 
         except Exception as e:
             delivery.error_message = str(e)
             delivery.success = False
 
-            logfire.error(
-                "Webhook delivery error",
-                webhook_id=str(webhook.id),
-                event_type=event_type,
-                error=str(e),
+            logger.error(
+                "Webhook delivery error: webhook_id=%s event=%s error=%s",
+                webhook.id, event_type, e,
             )
 
         await self.db.flush()
@@ -227,17 +222,19 @@ class WebhookService:
 import hashlib
 import hmac
 import json
+import logging
 import secrets
 from datetime import UTC, datetime
 
 import httpx
-import logfire
 from sqlalchemy.orm import Session as DBSession
 
 from app.core.exceptions import NotFoundError
 from app.db.models.webhook import Webhook, WebhookDelivery
 from app.repositories import webhook_repo
 from app.schemas.webhook import WebhookCreate, WebhookUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class WebhookService:
@@ -314,11 +311,9 @@ class WebhookService:
             try:
                 self._deliver(webhook, event_type, payload)
             except Exception as e:
-                logfire.error(
-                    "Webhook delivery failed",
-                    webhook_id=str(webhook.id),
-                    event_type=event_type,
-                    error=str(e),
+                logger.error(
+                    "Webhook delivery failed: webhook_id=%s event=%s error=%s",
+                    webhook.id, event_type, e,
                 )
 
     def _deliver(
@@ -398,16 +393,18 @@ class WebhookService:
 import hashlib
 import hmac
 import json
+import logging
 import secrets
 from datetime import UTC, datetime
 
 import httpx
-import logfire
 
 from app.core.exceptions import NotFoundError
 from app.db.models.webhook import Webhook, WebhookDelivery
 from app.repositories import webhook_repo
 from app.schemas.webhook import WebhookCreate, WebhookUpdate
+
+logger = logging.getLogger(__name__)
 
 
 class WebhookService:
@@ -478,11 +475,9 @@ class WebhookService:
             try:
                 await self._deliver(webhook, event_type, payload)
             except Exception as e:
-                logfire.error(
-                    "Webhook delivery failed",
-                    webhook_id=str(webhook.id),
-                    event_type=event_type,
-                    error=str(e),
+                logger.error(
+                    "Webhook delivery failed: webhook_id=%s event=%s error=%s",
+                    webhook.id, event_type, e,
                 )
 
     async def _deliver(

@@ -282,9 +282,9 @@ class Settings(BaseSettings):
     AI_TEMPERATURE: float = 0.7
     AI_FRAMEWORK: str = "{{ cookiecutter.ai_framework }}"
     LLM_PROVIDER: str = "{{ cookiecutter.llm_provider }}"
-{%- if cookiecutter.use_langchain %}
+{%- if cookiecutter.enable_langsmith %}
 
-    # === LangSmith (LangChain observability) ===
+    # === LangSmith Observability ===
     LANGCHAIN_TRACING_V2: bool = True
     LANGCHAIN_API_KEY: str | None = None
     LANGCHAIN_PROJECT: str = "{{ cookiecutter.project_slug }}"

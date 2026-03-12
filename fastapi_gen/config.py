@@ -243,6 +243,7 @@ class ProjectConfig(BaseModel):
     enable_conversation_persistence: bool = False
     enable_webhooks: bool = False
     websocket_auth: WebSocketAuthType = WebSocketAuthType.NONE
+    enable_langsmith: bool = False
     enable_cors: bool = True
     enable_orjson: bool = True
 
@@ -349,6 +350,14 @@ class ProjectConfig(BaseModel):
             and not self.enable_redis
         ):
             raise ValueError("Rate limiting with Redis storage requires Redis to be enabled")
+
+        # LangSmith requires LangChain-ecosystem framework
+        if self.enable_langsmith and self.ai_framework not in (
+            AIFrameworkType.LANGCHAIN,
+            AIFrameworkType.LANGGRAPH,
+            AIFrameworkType.DEEPAGENTS,
+        ):
+            raise ValueError("LangSmith requires LangChain, LangGraph, or DeepAgents framework")
 
         # WebSocket JWT auth requires main JWT auth
         if self.websocket_auth == WebSocketAuthType.JWT and self.auth not in (
@@ -538,6 +547,7 @@ class ProjectConfig(BaseModel):
             "use_anthropic": self.llm_provider == LLMProviderType.ANTHROPIC,
             "use_openrouter": self.llm_provider == LLMProviderType.OPENROUTER,
             "enable_conversation_persistence": self.enable_conversation_persistence,
+            "enable_langsmith": self.enable_langsmith,
             "enable_webhooks": self.enable_webhooks,
             "websocket_auth": self.websocket_auth.value,
             "websocket_auth_jwt": self.websocket_auth == WebSocketAuthType.JWT,

@@ -31,7 +31,7 @@ class TestCli:
         """Test CLI help displays."""
         result = runner.invoke(cli, ["--help"])
         assert result.exit_code == 0
-        assert "FastAPI Project Generator" in result.output
+        assert "Full-Stack AI Agent Template Generator" in result.output
 
     def test_cli_version(self, runner: CliRunner) -> None:
         """Test CLI version displays."""

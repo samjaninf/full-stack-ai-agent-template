@@ -1,4 +1,4 @@
-"""CLI interface for FastAPI project generator."""
+"""CLI interface for Full-Stack AI Agent Template Generator."""
 
 from pathlib import Path
 
@@ -19,6 +19,7 @@ from .config import (
     PdfParserType,
     ProjectConfig,
     RAGFeatures,
+    WebSocketAuthType,
 )
 from .generator import generate_project, post_generation_tasks
 from .prompts import confirm_generation, run_interactive_prompts, show_summary
@@ -26,10 +27,17 @@ from .prompts import confirm_generation, run_interactive_prompts, show_summary
 console = Console()
 
 
-@click.group()
+@click.group(invoke_without_command=True)
 @click.version_option(version=__version__, prog_name="fastapi-fullstack")
-def cli() -> None:
-    """FastAPI Project Generator with Logfire observability."""
+@click.pass_context
+def cli(ctx: click.Context) -> None:
+    """Full-Stack AI Agent Template Generator.
+
+    Generate production-ready FastAPI + Next.js projects with AI agents,
+    WebSocket streaming, 20+ enterprise integrations, and observability.
+    """
+    if ctx.invoked_subcommand is None:
+        ctx.invoke(new)
 
 
 @cli.command()
@@ -145,7 +153,7 @@ def new(output: Path | None, no_input: bool, name: str | None) -> None:
 )
 @click.option(
     "--ai-framework",
-    type=click.Choice(["pydantic_ai", "langchain"]),
+    type=click.Choice(["pydantic_ai", "langchain", "langgraph", "crewai", "deepagents"]),
     default="pydantic_ai",
     help="AI framework (default: pydantic_ai)",
 )
@@ -155,7 +163,17 @@ def new(output: Path | None, no_input: bool, name: str | None) -> None:
     default="openai",
     help="LLM provider (default: openai). Note: openrouter only works with pydantic_ai",
 )
-# New optional feature flags
+@click.option(
+    "--conversation-persistence",
+    is_flag=True,
+    help="Enable conversation persistence (requires --ai-agent and a database)",
+)
+@click.option(
+    "--websocket-auth",
+    type=click.Choice(["none", "jwt", "api_key"]),
+    default="none",
+    help="WebSocket authentication method",
+)
 @click.option("--redis", is_flag=True, help="Enable Redis")
 @click.option("--caching", is_flag=True, help="Enable caching (requires --redis)")
 @click.option("--rate-limiting", is_flag=True, help="Enable rate limiting")
@@ -180,6 +198,11 @@ def new(output: Path | None, no_input: bool, name: str | None) -> None:
 @click.option("--prometheus", is_flag=True, help="Enable Prometheus metrics")
 @click.option("--file-storage", is_flag=True, help="Enable S3/MinIO file storage")
 @click.option("--webhooks", is_flag=True, help="Enable webhooks support")
+@click.option(
+    "--langsmith",
+    is_flag=True,
+    help="Enable LangSmith observability (LangChain/LangGraph/DeepAgents)",
+)
 @click.option(
     "--python-version",
     type=click.Choice(["3.11", "3.12", "3.13"]),
@@ -236,7 +259,9 @@ def create(
     ai_agent: bool,
     ai_framework: str,
     llm_provider: str,
-    # New optional features
+    conversation_persistence: bool,
+    websocket_auth: str,
+    # Optional features
     redis: bool,
     caching: bool,
     rate_limiting: bool,
@@ -251,6 +276,7 @@ def create(
     prometheus: bool,
     file_storage: bool,
     webhooks: bool,
+    langsmith: bool,
     python_version: str,
     i18n: bool,
     rag: bool,
@@ -298,6 +324,7 @@ def create(
                 llm_provider=LLMProviderType(llm_provider),
                 enable_websockets=True,
                 enable_conversation_persistence=True,
+                enable_langsmith=ai_framework in ("langchain", "langgraph", "deepagents"),
                 enable_docker=True,
                 ci_type=CIType.GITHUB,
                 generate_env=not no_env,
@@ -347,7 +374,8 @@ def create(
                 enable_ai_agent=ai_agent,
                 ai_framework=AIFrameworkType(ai_framework),
                 llm_provider=LLMProviderType(llm_provider),
-                # New options
+                enable_conversation_persistence=conversation_persistence,
+                websocket_auth=WebSocketAuthType(websocket_auth),
                 enable_redis=redis,
                 enable_caching=caching,
                 enable_rate_limiting=rate_limiting,
@@ -362,6 +390,7 @@ def create(
                 enable_prometheus=prometheus,
                 enable_file_storage=file_storage,
                 enable_webhooks=webhooks,
+                enable_langsmith=langsmith,
                 python_version=python_version,
                 enable_i18n=i18n,
                 rag_features=RAGFeatures(
@@ -401,7 +430,7 @@ def create(
 @cli.command()
 def templates() -> None:
     """List available template options."""
-    console.print("[bold cyan]Available Options[/]")
+    console.print("[bold cyan]Full-Stack AI Agent Template — Available Options[/]")
     console.print()
 
     console.print("[bold]Presets:[/]")
@@ -415,15 +444,31 @@ def templates() -> None:
     console.print("  --database mongodb     MongoDB with Motor (async)")
     console.print("  --database sqlite      SQLite with SQLAlchemy (sync)")
     console.print("  --database none        No database")
+    console.print("  --orm sqlalchemy       SQLAlchemy (default)")
+    console.print("  --orm sqlmodel         SQLModel (PostgreSQL/SQLite only)")
     console.print()
 
     console.print("[bold]Authentication:[/]")
-    console.print("  --auth jwt         JWT + User Management")
-    console.print("  --auth api_key     API Key (header-based)")
-    console.print("  --auth both        JWT with API Key fallback")
-    console.print("  --auth none        No authentication")
-    console.print("  --oauth-google     Enable Google OAuth")
-    console.print("  --session-management  Enable session management")
+    console.print("  --auth jwt             JWT + User Management")
+    console.print("  --auth api_key         API Key (header-based)")
+    console.print("  --auth both            JWT with API Key fallback")
+    console.print("  --auth none            No authentication")
+    console.print("  --oauth-google         Enable Google OAuth")
+    console.print("  --session-management   Enable session management")
+    console.print()
+
+    console.print("[bold]AI Agent:[/]")
+    console.print("  --ai-agent                      Enable AI agent with WebSocket streaming")
+    console.print("  --ai-framework pydantic_ai      PydanticAI (recommended)")
+    console.print("  --ai-framework langchain        LangChain")
+    console.print("  --ai-framework langgraph        LangGraph (ReAct agent)")
+    console.print("  --ai-framework crewai           CrewAI (multi-agent crews)")
+    console.print("  --ai-framework deepagents       DeepAgents (agentic coding, HITL)")
+    console.print("  --llm-provider openai           OpenAI (gpt-4o-mini)")
+    console.print("  --llm-provider anthropic        Anthropic (claude-sonnet-4-5)")
+    console.print("  --llm-provider openrouter       OpenRouter (pydantic_ai only)")
+    console.print("  --conversation-persistence      Save chat history to database")
+    console.print("  --websocket-auth none|jwt|api_key  WebSocket auth method")
     console.print()
 
     console.print("[bold]Background Tasks:[/]")
@@ -436,16 +481,7 @@ def templates() -> None:
     console.print("[bold]Frontend:[/]")
     console.print("  --frontend none        API only (no frontend)")
     console.print("  --frontend nextjs      Next.js 15 (App Router, TypeScript, Bun)")
-    console.print("  --i18n                 Enable internationalization")
-    console.print()
-
-    console.print("[bold]AI Agent:[/]")
-    console.print("  --ai-agent                  Enable AI agent")
-    console.print("  --ai-framework pydantic_ai  PydanticAI (recommended)")
-    console.print("  --ai-framework langchain    LangChain")
-    console.print("  --llm-provider openai       OpenAI (gpt-4o-mini)")
-    console.print("  --llm-provider anthropic    Anthropic (claude-sonnet-4-5)")
-    console.print("  --llm-provider openrouter   OpenRouter (pydantic_ai only)")
+    console.print("  --i18n                 Enable internationalization (next-intl)")
     console.print()
 
     console.print("[bold]RAG (Retrieval Augmented Generation):[/]")
@@ -466,7 +502,8 @@ def templates() -> None:
     console.print()
 
     console.print("[bold]Observability:[/]")
-    console.print("  --no-logfire       Disable Logfire integration")
+    console.print("  --no-logfire       Disable Logfire integration (PydanticAI)")
+    console.print("  --langsmith        Enable LangSmith (LangChain/LangGraph/DeepAgents)")
     console.print("  --sentry           Enable Sentry error tracking")
     console.print("  --prometheus       Enable Prometheus metrics")
     console.print()
@@ -483,6 +520,8 @@ def templates() -> None:
     console.print("  --python-version 3.11|3.12|3.13  Python version")
     console.print("  --no-example-crud  Skip example CRUD endpoint")
     console.print("  --no-env           Skip .env file generation")
+    console.print("  --backend-port N   Backend port (default: 8000)")
+    console.print("  --frontend-port N  Frontend port (default: 3000)")
 
 
 def main() -> None:

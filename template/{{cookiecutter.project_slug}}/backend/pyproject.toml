@@ -182,6 +182,9 @@ dependencies = [
     "llama-parse>=0.5.0",
 {%- endif %}
 {%- endif %}
+{%- if cookiecutter.enable_langsmith %}
+    "langsmith>=0.2.0",
+{%- endif %}
 {%- if cookiecutter.logfire_httpx or cookiecutter.enable_file_storage %}
     "httpx>=0.27.0",
 {%- endif %}

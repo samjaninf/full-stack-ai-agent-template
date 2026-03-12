@@ -736,6 +736,89 @@ class TestOptionCombinationValidation:
         assert context["use_crewai"] is False
 
 
+class TestLangSmithIntegration:
+    """Tests for LangSmith observability integration."""
+
+    def test_langsmith_with_pydanticai_raises_error(self) -> None:
+        """Test that LangSmith + PydanticAI is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ProjectConfig(
+                project_name="test",
+                enable_ai_agent=True,
+                ai_framework=AIFrameworkType.PYDANTIC_AI,
+                enable_langsmith=True,
+            )
+        assert "LangSmith requires LangChain, LangGraph, or DeepAgents" in str(exc_info.value)
+
+    def test_langsmith_with_crewai_raises_error(self) -> None:
+        """Test that LangSmith + CrewAI is rejected."""
+        with pytest.raises(ValidationError) as exc_info:
+            ProjectConfig(
+                project_name="test",
+                enable_ai_agent=True,
+                ai_framework=AIFrameworkType.CREWAI,
+                enable_langsmith=True,
+            )
+        assert "LangSmith requires LangChain, LangGraph, or DeepAgents" in str(exc_info.value)
+
+    def test_langsmith_with_langchain_is_valid(self) -> None:
+        """Test that LangSmith + LangChain is accepted."""
+        config = ProjectConfig(
+            project_name="test",
+            enable_ai_agent=True,
+            ai_framework=AIFrameworkType.LANGCHAIN,
+            enable_langsmith=True,
+        )
+        assert config.enable_langsmith is True
+
+    def test_langsmith_with_langgraph_is_valid(self) -> None:
+        """Test that LangSmith + LangGraph is accepted."""
+        config = ProjectConfig(
+            project_name="test",
+            enable_ai_agent=True,
+            ai_framework=AIFrameworkType.LANGGRAPH,
+            enable_langsmith=True,
+        )
+        assert config.enable_langsmith is True
+
+    def test_langsmith_with_deepagents_is_valid(self) -> None:
+        """Test that LangSmith + DeepAgents is accepted."""
+        config = ProjectConfig(
+            project_name="test",
+            enable_ai_agent=True,
+            ai_framework=AIFrameworkType.DEEPAGENTS,
+            enable_langsmith=True,
+        )
+        assert config.enable_langsmith is True
+
+    def test_langsmith_in_cookiecutter_context(self) -> None:
+        """Test that enable_langsmith appears in cookiecutter context."""
+        config = ProjectConfig(
+            project_name="test",
+            enable_ai_agent=True,
+            ai_framework=AIFrameworkType.LANGCHAIN,
+            enable_langsmith=True,
+        )
+        context = config.to_cookiecutter_context()
+        assert context["enable_langsmith"] is True
+
+    def test_langsmith_disabled_in_context(self) -> None:
+        """Test that enable_langsmith=False appears in context."""
+        config = ProjectConfig(
+            project_name="test",
+            enable_ai_agent=True,
+            ai_framework=AIFrameworkType.LANGCHAIN,
+            enable_langsmith=False,
+        )
+        context = config.to_cookiecutter_context()
+        assert context["enable_langsmith"] is False
+
+    def test_langsmith_defaults_to_false(self) -> None:
+        """Test that LangSmith is disabled by default."""
+        config = ProjectConfig(project_name="test")
+        assert config.enable_langsmith is False
+
+
 class TestEmailValidation:
     """Tests for author_email validation."""
 

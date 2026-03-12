@@ -2,8 +2,12 @@
 """RAG tool for agent knowledge base search."""
 
 import asyncio
+import logging
+from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache
 from typing import TYPE_CHECKING
+
+logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from app.rag.retrieval import BaseRetrievalService
@@ -91,6 +95,22 @@ async def search_knowledge_base(
     return "\n\n".join(formatted_results)
 
 
+def _run_async_search(query: str, collection: str, top_k: int) -> str:
+    """Run async search in a dedicated event loop within a thread.
+    
+    This creates a fresh event loop for each call, avoiding event loop
+    conflicts with the main thread or other async contexts.
+    """
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    try:
+        return loop.run_until_complete(
+            search_knowledge_base(query, collection, top_k)
+        )
+    finally:
+        loop.close()
+
+
 def search_knowledge_base_sync(
     query: str,
     collection: str = "default",
@@ -109,7 +129,30 @@ def search_knowledge_base_sync(
     Returns:
         Formatted string with search results.
     """
-    return asyncio.run(search_knowledge_base(query, collection, top_k))
+    logger.debug(
+        "search_knowledge_base_sync called: query=%s, collection=%s, top_k=%s",
+        query,
+        collection,
+        top_k,
+    )
+    try:
+        # Use ThreadPoolExecutor with a dedicated event loop
+        # This avoids "Event loop is closed" errors when asyncio.run()
+        # is called multiple times or from within an async context
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(
+                _run_async_search, query, collection, top_k
+            )
+            result = future.result()
+        logger.debug("search_knowledge_base_sync completed successfully")
+        return result
+    except Exception as e:
+        logger.error(
+            "search_knowledge_base_sync failed: %s",
+            str(e),
+            exc_info=True,
+        )
+        raise
 
 {%- if cookiecutter.use_crewai %}
 from crewai.tools import BaseTool

@@ -6,8 +6,8 @@ Thank you for your interest in contributing to fastapi-fullstack!
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/vstorm-co/full-stack-fastapi-nextjs-llm-template.git
-   cd full-stack-fastapi-nextjs-llm-template
+   git clone https://github.com/vstorm-co/full-stack-ai-agent-template.git
+   cd full-stack-ai-agent-template
    ```
 
 2. Install dependencies:

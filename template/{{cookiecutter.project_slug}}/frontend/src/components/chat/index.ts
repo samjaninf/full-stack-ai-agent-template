@@ -1,3 +1,4 @@
+{%- if cookiecutter.enable_ai_agent %}
 export { ChatContainer } from "./chat-container";
 export { MessageList } from "./message-list";
 export { MessageItem } from "./message-item";
@@ -9,4 +10,5 @@ export { CopyButton } from "./copy-button";
 export { MarkdownContent } from "./markdown-content";
 {%- if cookiecutter.enable_conversation_persistence and cookiecutter.use_database %}
 export { ConversationSidebar } from "./conversation-sidebar";
+{%- endif %}
 {%- endif %}
