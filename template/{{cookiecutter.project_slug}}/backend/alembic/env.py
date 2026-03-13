@@ -19,6 +19,9 @@ from app.db.base import Base
 {%- if cookiecutter.use_jwt %}
 from app.db.models.user import User  # noqa: F401
 {%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion %}
+from app.db.models.gdrive_sync import GoogleDriveFolder, GoogleDriveFile, GoogleDriveSyncLog  # noqa: F401
+{%- endif %}
 
 config = context.config
 

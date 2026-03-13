@@ -27,6 +27,18 @@ from app.worker.tasks.rag_ingestion import reindex_collection_arq
 {%- endif %}
 {%- endif %}
 
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database and cookiecutter.use_milvus %}
+{%- if cookiecutter.use_celery %}
+from app.worker.tasks.gdrive_sync import sync_gdrive_folder
+{%- endif %}
+{%- if cookiecutter.use_taskiq %}
+from app.worker.tasks.gdrive_sync import sync_gdrive_folder_taskiq
+{%- endif %}
+{%- if cookiecutter.use_arq %}
+from app.worker.tasks.gdrive_sync import sync_gdrive_folder_arq
+{%- endif %}
+{%- endif %}
+
 __all__ = [
 {%- if cookiecutter.use_celery %}
     "example_task",
@@ -49,6 +61,17 @@ __all__ = [
 {%- endif %}
 {%- if cookiecutter.use_arq %}
     "reindex_collection_arq",
+{%- endif %}
+{%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database and cookiecutter.use_milvus %}
+{%- if cookiecutter.use_celery %}
+    "sync_gdrive_folder",
+{%- endif %}
+{%- if cookiecutter.use_taskiq %}
+    "sync_gdrive_folder_taskiq",
+{%- endif %}
+{%- if cookiecutter.use_arq %}
+    "sync_gdrive_folder_arq",
 {%- endif %}
 {%- endif %}
 ]

@@ -1,5 +1,5 @@
 """API v1 router aggregation."""
-{%- if cookiecutter.use_jwt or cookiecutter.enable_oauth or cookiecutter.include_example_crud or cookiecutter.enable_conversation_persistence or cookiecutter.enable_webhooks or cookiecutter.enable_websockets or cookiecutter.enable_ai_agent %}
+{%- if cookiecutter.use_jwt or cookiecutter.enable_oauth or cookiecutter.include_example_crud or cookiecutter.enable_conversation_persistence or cookiecutter.enable_webhooks or cookiecutter.enable_websockets or cookiecutter.enable_ai_agent or cookiecutter.enable_google_drive_ingestion %}
 # ruff: noqa: I001 - Imports structured for Jinja2 template conditionals
 {%- endif %}
 
@@ -32,6 +32,9 @@ from app.api.routes.v1 import agent
 {%- endif %}
 {%- if cookiecutter.enable_rag %}
 from app.api.routes.v1 import rag
+{%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database and cookiecutter.use_milvus %}
+from app.api.routes.v1 import gdrive
 {%- endif %}
 
 v1_router = APIRouter()
@@ -93,4 +96,9 @@ v1_router.include_router(agent.router, tags=["agent"])
 
 # RAG routes
 v1_router.include_router(rag.router, prefix="/rag", tags=["rag"])
+{%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database and cookiecutter.use_milvus %}
+
+# Google Drive ingestion routes
+v1_router.include_router(gdrive.router, prefix="/gdrive", tags=["gdrive"])
 {%- endif %}

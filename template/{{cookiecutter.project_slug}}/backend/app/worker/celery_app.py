@@ -59,6 +59,13 @@ celery_app.conf.beat_schedule = {
         # collection_name defaults to RAGSettings.collection_name
     },
     {%- endif %}
+    {%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database %}
+    # Google Drive sync scheduled tasks
+    "gdrive-sync-hourly": {
+        "task": "app.worker.tasks.gdrive_sync.sync_all_active_folders",
+        "schedule": 3600.0,  # Every hour
+    },
+    {%- endif %}
 }
 
 {%- if cookiecutter.enable_logfire and cookiecutter.logfire_celery %}

@@ -24,6 +24,10 @@ from app.db.models.conversation import Conversation, Message, ToolCall
 {%- set _ = models.extend(["Webhook", "WebhookDelivery"]) %}
 from app.db.models.webhook import Webhook, WebhookDelivery
 {%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion %}
+{%- set _ = models.extend(["GoogleDriveFolder", "GoogleDriveFile", "GoogleDriveSyncLog"]) %}
+from app.db.models.gdrive_sync import GoogleDriveFolder, GoogleDriveFile, GoogleDriveSyncLog
+{%- endif %}
 {%- if models %}
 
 __all__ = {{ models }}

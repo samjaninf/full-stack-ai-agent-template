@@ -58,6 +58,28 @@ class PdfParser(BaseModel):
     {%- endif %}
 
 
+{%- if cookiecutter.enable_google_drive_ingestion %}
+class GoogleDriveIngestionConfig(BaseModel):
+    """Google Drive ingestion configuration."""
+    
+    enabled: bool = True
+    default_sync_interval: int = 60  # minutes
+    supported_mime_types: list[str] = Field(
+        default_factory=lambda: [
+            "application/pdf",
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            "text/plain",
+            "text/markdown",
+            "text/csv",
+            "application/json",
+        ]
+    )
+    # Rate limiting
+    max_files_per_sync: int = 100
+    request_timeout_seconds: int = 30
+{%- endif %}
+
+
 class RAGSettings(BaseModel):
     """Constants and variables used to setup the RAG features."""
     
@@ -86,9 +108,7 @@ class RAGSettings(BaseModel):
     pdf_parser: PdfParser = Field(default_factory=PdfParser)
     
     {%- if cookiecutter.enable_google_drive_ingestion %}
-    # Ingestion
-    gdrive_ingestion: bool = True
-    {%- else %}
-    gdrive_ingestion: bool = False
+    # Google Drive ingestion
+    gdrive_config: GoogleDriveIngestionConfig = Field(default_factory=GoogleDriveIngestionConfig)
     {%- endif %}
 {%- endif %}

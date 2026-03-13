@@ -67,6 +67,9 @@ from app.services.session import SessionService
 {%- if cookiecutter.enable_webhooks and cookiecutter.use_database %}
 from app.services.webhook import WebhookService
 {%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database and cookiecutter.use_milvus %}
+from app.services.gdrive_ingestion import GoogleDriveIngestionService
+{%- endif %}
 {%- if cookiecutter.include_example_crud and cookiecutter.use_database %}
 from app.services.item import ItemService
 {%- endif %}
@@ -128,6 +131,25 @@ def get_webhook_service() -> WebhookService:
 
 
 WebhookSvc = Annotated[WebhookService, Depends(get_webhook_service)]
+{%- endif %}
+
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database and cookiecutter.use_milvus %}
+{%- if cookiecutter.use_postgresql or cookiecutter.use_sqlite %}
+
+
+def get_gdrive_ingestion_service(db: DBSession) -> GoogleDriveIngestionService:
+    """Create GoogleDriveIngestionService instance with database session."""
+    return GoogleDriveIngestionService(db)
+{%- elif cookiecutter.use_mongodb %}
+
+
+def get_gdrive_ingestion_service() -> GoogleDriveIngestionService:
+    """Create GoogleDriveIngestionService instance."""
+    return GoogleDriveIngestionService()
+{%- endif %}
+
+
+GoogleDriveIngestionSvc = Annotated[GoogleDriveIngestionService, Depends(get_gdrive_ingestion_service)]
 {%- endif %}
 
 {%- if cookiecutter.include_example_crud and cookiecutter.use_database %}

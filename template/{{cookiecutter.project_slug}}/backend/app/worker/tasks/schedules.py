@@ -1,4 +1,4 @@
-{%- if cookiecutter.use_taskiq and cookiecutter.enable_rag and cookiecutter.use_milvus %}
+{%- if cookiecutter.use_taskiq and (cookiecutter.enable_rag or cookiecutter.enable_google_drive_ingestion) and cookiecutter.use_milvus %}
 """Taskiq scheduled tasks (cron-like)."""
 
 from app.worker.taskiq_app import broker
@@ -31,16 +31,36 @@ async def scheduled_rag_reindex(collection_name: str | None = None) -> dict:
 
     result = await reindex_collection_taskiq.kiq(collection_name)
     return {"scheduled": True, "task_id": str(result.task_id), "collection": collection_name}
+{%- endif %}
 
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database %}
+# Google Drive sync scheduled tasks
+
+
+@broker.task
+async def scheduled_gdrive_sync() -> dict:
+    """Hourly Google Drive folder sync."""
+    from app.worker.tasks.gdrive_sync import sync_all_active_folders_taskiq
+
+    result = await sync_all_active_folders_taskiq.kiq()
+    return {"scheduled": True, "task_id": str(result.task_id)}
+{%- endif %}
 
 # Define schedules via SCHEDULES list (picked up by TaskiqScheduler with sources=)
 SCHEDULES = [
+{%- if cookiecutter.enable_rag and cookiecutter.use_milvus %}
     {
         "task": "app.worker.tasks.schedules:scheduled_rag_reindex",
         "cron": "0 2 * * *",  # Daily at 2 AM
     },
-]
 {%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database %}
+    {
+        "task": "app.worker.tasks.schedules:scheduled_gdrive_sync",
+        "cron": "0 * * * *",  # Hourly sync
+    },
+{%- endif %}
+]
 {%- else %}
 # Taskiq not enabled for this project
 {%- endif %}

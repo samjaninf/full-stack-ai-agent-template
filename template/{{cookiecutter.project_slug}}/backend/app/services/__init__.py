@@ -32,6 +32,11 @@ from app.services.conversation import ConversationService
 
 from app.services.webhook import WebhookService
 {%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database and cookiecutter.use_milvus %}
+{%- set _ = services.append("GoogleDriveIngestionService") %}
+
+from app.services.gdrive_ingestion import GoogleDriveIngestionService
+{%- endif %}
 {%- if services %}
 
 __all__ = {{ services }}

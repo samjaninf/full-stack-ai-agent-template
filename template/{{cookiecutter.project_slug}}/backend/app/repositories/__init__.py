@@ -26,6 +26,10 @@ from app.repositories import conversation as conversation_repo
 
 from app.repositories import webhook as webhook_repo
 {%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database %}
+
+from app.repositories import gdrive_sync as gdrive_sync_repo
+{%- endif %}
 
 __all__ = [
 {%- if cookiecutter.use_postgresql or cookiecutter.use_sqlite %}
@@ -45,5 +49,8 @@ __all__ = [
 {%- endif %}
 {%- if cookiecutter.enable_webhooks and cookiecutter.use_database %}
     "webhook_repo",
+{%- endif %}
+{%- if cookiecutter.enable_google_drive_ingestion and cookiecutter.use_database %}
+    "gdrive_sync_repo",
 {%- endif %}
 ]
