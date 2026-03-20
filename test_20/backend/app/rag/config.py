@@ -1,10 +1,8 @@
-"""RAG Config.
-
-Variables and constants used in the RAG feature to run it."""
+"""RAG configuration."""
 
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class DocumentExtensions(StrEnum):
@@ -16,42 +14,64 @@ class DocumentExtensions(StrEnum):
     TXT = ".txt"
 
 
+# Known embedding models and their output dimensions.
+# Used to auto-set vector store dimension from model name.
+EMBEDDING_DIMENSIONS: dict[str, int] = {
+    # OpenAI
+    "text-embedding-3-small": 1536,
+    "text-embedding-3-large": 3072,
+    "text-embedding-ada-002": 1536,
+    # Voyage AI
+    "voyage-3": 1024,
+    "voyage-3-lite": 512,
+    "voyage-code-3": 1024,
+    # Google Gemini
+    "gemini-embedding-exp-03-07": 3072,
+    # SentenceTransformers (local)
+    "all-MiniLM-L6-v2": 384,
+    "all-mpnet-base-v2": 768,
+    "bge-small-en-v1.5": 384,
+    "bge-base-en-v1.5": 768,
+    "bge-large-en-v1.5": 1024,
+}
+
+
 class EmbeddingsConfig(BaseModel):
-    """Embeddings configuration for usage in RAG feature."""
+    """Embeddings configuration. Dimension is auto-derived from model name."""
 
     model: str = "all-MiniLM-L6-v2"
     dim: int = 384
 
+    @model_validator(mode="after")
+    def set_dim_from_model(self) -> "EmbeddingsConfig":
+        if self.model in EMBEDDING_DIMENSIONS:
+            self.dim = EMBEDDING_DIMENSIONS[self.model]
+        return self
+
 
 class RerankerConfig(BaseModel):
-    """Reranker configuration for usage in RAG features."""
+    """Reranker configuration."""
 
     model: str = "cross_encoder"
 
 
 class DocumentParser(BaseModel):
-    """Document parsing settings for RAG features.
+    """Document parsing settings (non-PDF files)."""
 
-    Note: This now only applies to non-PDF files (txt, md, docx).
-    PDF parsing is controlled separately via pdf_parser.
-    """
-
-    method: str = "python_native"  # Always python_native for non-PDF
+    method: str = "python_native"
 
 
 class PdfParser(BaseModel):
-    """PDF parsing settings for RAG features."""
+    """PDF parsing settings."""
 
     method: str = "pymupdf"
 
 
 class RAGSettings(BaseModel):
-    """Constants and variables used to setup the RAG features."""
+    """RAG pipeline configuration."""
 
-    # Collection
     collection_name: str = "documents"
 
-    # Documents
     allowed_extensions: list[DocumentExtensions] = Field(
         default_factory=lambda: list(DocumentExtensions)
     )
@@ -59,9 +79,9 @@ class RAGSettings(BaseModel):
     # Chunking
     chunk_size: int = 512
     chunk_overlap: int = 50
-    chunking_strategy: str = "recursive"  # recursive, markdown, or fixed
-    enable_hybrid_search: bool = False  # BM25 + vector fusion
-    enable_ocr: bool = False  # OCR fallback for scanned PDFs (requires tesseract)
+    chunking_strategy: str = "recursive"
+    enable_hybrid_search: bool = False
+    enable_ocr: bool = False
 
     # Embeddings
     embeddings_config: EmbeddingsConfig = Field(default_factory=EmbeddingsConfig)
@@ -69,10 +89,9 @@ class RAGSettings(BaseModel):
     # Reranker
     reranker_config: RerankerConfig = Field(default_factory=RerankerConfig)
 
-    # Document parsing
+    # Parsers
     document_parser: DocumentParser = Field(default_factory=DocumentParser)
-
-    # PDF parsing
     pdf_parser: PdfParser = Field(default_factory=PdfParser)
-    # Ingestion
+
+    # Sources
     gdrive_ingestion: bool = True

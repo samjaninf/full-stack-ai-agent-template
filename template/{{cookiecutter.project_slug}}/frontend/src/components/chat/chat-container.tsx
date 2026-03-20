@@ -229,18 +229,20 @@ function ChatUI({
 
       <div className="px-2 pb-2 sm:px-4 sm:pb-4">
         <div className="rounded-xl border bg-card shadow-sm p-3 sm:p-4">
-          {/* Status indicator */}
-          <div className="mb-2 flex items-center gap-1.5">
-            <span
-              className={`inline-block h-1.5 w-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
-            />
-            <span className="text-muted-foreground text-[11px]">
-              {isConnected ? "Connected" : "Disconnected"}
-            </span>
+          {/* Status bar with model selector */}
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`inline-block h-1.5 w-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
+              />
+              <span className="text-muted-foreground text-[11px]">
+                {isConnected ? "Connected" : "Disconnected"}
+              </span>
+            </div>
           </div>
           <ChatInput
             onSend={sendMessage}
-            disabled={!isConnected || isProcessing || !!pendingApproval}
+            disabled={!isConnected || !!pendingApproval}
             isProcessing={isProcessing}
           />
         </div>

@@ -4,18 +4,9 @@ import { backendFetch, BackendApiError } from "@/lib/server-api";
 
 // GET /api/v1/rag/collections - List collections
 export async function GET(request: NextRequest) {
-  const authEnabled = process.env.NEXT_PUBLIC_AUTH_ENABLED === "true";
-  let accessToken: string | undefined;
-
-  if (authEnabled) {
-    accessToken = request.cookies.get("access_token")?.value;
-    if (!accessToken) {
-      return NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
-    }
-  }
-
   try {
     const headers: Record<string, string> = {};
+    const accessToken = request.cookies.get("access_token")?.value;
     if (accessToken) {
       headers["Authorization"] = `Bearer ${accessToken}`;
     }
@@ -35,19 +26,10 @@ export async function GET(request: NextRequest) {
 
 // POST /api/v1/rag/collections - Create collection
 export async function POST(request: NextRequest) {
-  const authEnabled = process.env.NEXT_PUBLIC_AUTH_ENABLED === "true";
-  let accessToken: string | undefined;
-
-  if (authEnabled) {
-    accessToken = request.cookies.get("access_token")?.value;
-    if (!accessToken) {
-      return NextResponse.json({ detail: "Not authenticated" }, { status: 401 });
-    }
-  }
-
   try {
     const body = await request.json();
     const headers: Record<string, string> = { "Content-Type": "application/json" };
+    const accessToken = request.cookies.get("access_token")?.value;
     if (accessToken) {
       headers["Authorization"] = `Bearer ${accessToken}`;
     }

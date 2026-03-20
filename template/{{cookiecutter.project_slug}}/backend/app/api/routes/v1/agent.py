@@ -42,10 +42,10 @@ from app.core.config import settings
 {%- if cookiecutter.enable_conversation_persistence and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 from app.db.session import get_db_context
 from app.api.deps import ConversationSvc, get_conversation_service
-from app.schemas.conversation import ConversationCreate, MessageCreate, ToolCallCreate, ToolCallComplete
+from app.schemas.conversation import ConversationCreate, ConversationUpdate, MessageCreate, ToolCallCreate, ToolCallComplete
 {%- elif cookiecutter.enable_conversation_persistence and cookiecutter.use_mongodb %}
 from app.api.deps import ConversationSvc, get_conversation_service
-from app.schemas.conversation import ConversationCreate, MessageCreate, ToolCallCreate, ToolCallComplete
+from app.schemas.conversation import ConversationCreate, ConversationUpdate, MessageCreate, ToolCallCreate, ToolCallComplete
 {%- endif %}
 
 logger = logging.getLogger(__name__)
@@ -195,8 +195,11 @@ async def agent_websocket(
                     requested_conv_id = data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        # Verify conversation exists
-                        await conv_service.get_conversation(UUID(requested_conv_id))
+                        # Verify conversation exists and update title if empty
+                        conv = await conv_service.get_conversation(UUID(requested_conv_id))
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            await conv_service.update_conversation(UUID(requested_conv_id), ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -234,7 +237,10 @@ async def agent_websocket(
                     requested_conv_id = data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        conv_service.get_conversation(requested_conv_id)
+                        conv = conv_service.get_conversation(requested_conv_id)
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -268,7 +274,10 @@ async def agent_websocket(
             requested_conv_id = data.get("conversation_id")
             if requested_conv_id:
                 current_conversation_id = requested_conv_id
-                await conv_service.get_conversation(requested_conv_id)
+                conv = await conv_service.get_conversation(requested_conv_id)
+                if not conv.title and user_message:
+                    title = user_message[:50] if len(user_message) > 50 else user_message
+                    await conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
             elif not current_conversation_id:
                 conv_data = ConversationCreate(
 {%- if cookiecutter.websocket_auth_jwt %}
@@ -294,7 +303,8 @@ async def agent_websocket(
             await manager.send_event(websocket, "user_prompt", {"content": user_message})
 
             try:
-                assistant = get_agent()
+                selected_model = data.get("model")
+                assistant = get_agent(model_name=selected_model)
                 model_history = build_message_history(conversation_history)
 
                 # Collect tool calls during streaming for persistence
@@ -598,10 +608,10 @@ from app.core.config import settings
 {%- if cookiecutter.enable_conversation_persistence and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 from app.db.session import get_db_context
 from app.api.deps import ConversationSvc, get_conversation_service
-from app.schemas.conversation import ConversationCreate, MessageCreate, ToolCallCreate, ToolCallComplete
+from app.schemas.conversation import ConversationCreate, ConversationUpdate, MessageCreate, ToolCallCreate, ToolCallComplete
 {%- elif cookiecutter.enable_conversation_persistence and cookiecutter.use_mongodb %}
 from app.api.deps import ConversationSvc, get_conversation_service
-from app.schemas.conversation import ConversationCreate, MessageCreate, ToolCallCreate, ToolCallComplete
+from app.schemas.conversation import ConversationCreate, ConversationUpdate, MessageCreate, ToolCallCreate, ToolCallComplete
 {%- endif %}
 
 logger = logging.getLogger(__name__)
@@ -755,8 +765,11 @@ async def agent_websocket(
                     requested_conv_id = data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        # Verify conversation exists
-                        await conv_service.get_conversation(UUID(requested_conv_id))
+                        # Verify conversation exists and update title if empty
+                        conv = await conv_service.get_conversation(UUID(requested_conv_id))
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            await conv_service.update_conversation(UUID(requested_conv_id), ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -794,7 +807,10 @@ async def agent_websocket(
                     requested_conv_id = data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        conv_service.get_conversation(requested_conv_id)
+                        conv = conv_service.get_conversation(requested_conv_id)
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -828,7 +844,10 @@ async def agent_websocket(
             requested_conv_id = data.get("conversation_id")
             if requested_conv_id:
                 current_conversation_id = requested_conv_id
-                await conv_service.get_conversation(requested_conv_id)
+                conv = await conv_service.get_conversation(requested_conv_id)
+                if not conv.title and user_message:
+                    title = user_message[:50] if len(user_message) > 50 else user_message
+                    await conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
             elif not current_conversation_id:
                 conv_data = ConversationCreate(
 {%- if cookiecutter.websocket_auth_jwt %}
@@ -854,7 +873,8 @@ async def agent_websocket(
             await manager.send_event(websocket, "user_prompt", {"content": user_message})
 
             try:
-                assistant = get_agent()
+                selected_model = data.get("model")
+                assistant = get_agent(model_name=selected_model)
                 model_history = build_message_history(conversation_history)
                 model_history.append(HumanMessage(content=user_message))
 
@@ -1045,10 +1065,10 @@ from app.core.config import settings
 {%- if cookiecutter.enable_conversation_persistence and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 from app.db.session import get_db_context
 from app.api.deps import ConversationSvc, get_conversation_service
-from app.schemas.conversation import ConversationCreate, MessageCreate, ToolCallCreate, ToolCallComplete
+from app.schemas.conversation import ConversationCreate, ConversationUpdate, MessageCreate, ToolCallCreate, ToolCallComplete
 {%- elif cookiecutter.enable_conversation_persistence and cookiecutter.use_mongodb %}
 from app.api.deps import ConversationSvc, get_conversation_service
-from app.schemas.conversation import ConversationCreate, MessageCreate, ToolCallCreate, ToolCallComplete
+from app.schemas.conversation import ConversationCreate, ConversationUpdate, MessageCreate, ToolCallCreate, ToolCallComplete
 {%- endif %}
 
 logger = logging.getLogger(__name__)
@@ -1203,8 +1223,11 @@ async def agent_websocket(
                     requested_conv_id = data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        # Verify conversation exists
-                        await conv_service.get_conversation(UUID(requested_conv_id))
+                        # Verify conversation exists and update title if empty
+                        conv = await conv_service.get_conversation(UUID(requested_conv_id))
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            await conv_service.update_conversation(UUID(requested_conv_id), ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -1242,7 +1265,10 @@ async def agent_websocket(
                     requested_conv_id = data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        conv_service.get_conversation(requested_conv_id)
+                        conv = conv_service.get_conversation(requested_conv_id)
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -1276,7 +1302,10 @@ async def agent_websocket(
             requested_conv_id = data.get("conversation_id")
             if requested_conv_id:
                 current_conversation_id = requested_conv_id
-                await conv_service.get_conversation(requested_conv_id)
+                conv = await conv_service.get_conversation(requested_conv_id)
+                if not conv.title and user_message:
+                    title = user_message[:50] if len(user_message) > 50 else user_message
+                    await conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
             elif not current_conversation_id:
                 conv_data = ConversationCreate(
 {%- if cookiecutter.websocket_auth_jwt %}
@@ -1302,7 +1331,8 @@ async def agent_websocket(
             await manager.send_event(websocket, "user_prompt", {"content": user_message})
 
             try:
-                assistant = get_agent()
+                selected_model = data.get("model")
+                assistant = get_agent(model_name=selected_model)
 
                 final_output = ""
                 tool_events: list[Any] = []
@@ -1635,8 +1665,11 @@ async def agent_websocket(
                     requested_conv_id = data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        # Verify conversation exists
-                        await conv_service.get_conversation(UUID(requested_conv_id))
+                        # Verify conversation exists and update title if empty
+                        conv = await conv_service.get_conversation(UUID(requested_conv_id))
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            await conv_service.update_conversation(UUID(requested_conv_id), ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -1674,7 +1707,10 @@ async def agent_websocket(
                     requested_conv_id = data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        conv_service.get_conversation(requested_conv_id)
+                        conv = conv_service.get_conversation(requested_conv_id)
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -1708,7 +1744,10 @@ async def agent_websocket(
             requested_conv_id = data.get("conversation_id")
             if requested_conv_id:
                 current_conversation_id = requested_conv_id
-                await conv_service.get_conversation(requested_conv_id)
+                conv = await conv_service.get_conversation(requested_conv_id)
+                if not conv.title and user_message:
+                    title = user_message[:50] if len(user_message) > 50 else user_message
+                    await conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
             elif not current_conversation_id:
                 conv_data = ConversationCreate(
 {%- if cookiecutter.websocket_auth_jwt %}
@@ -1967,10 +2006,10 @@ from app.core.config import settings
 {%- if cookiecutter.enable_conversation_persistence and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 from app.db.session import get_db_context
 from app.api.deps import ConversationSvc, get_conversation_service
-from app.schemas.conversation import ConversationCreate, MessageCreate, ToolCallCreate, ToolCallComplete
+from app.schemas.conversation import ConversationCreate, ConversationUpdate, MessageCreate, ToolCallCreate, ToolCallComplete
 {%- elif cookiecutter.enable_conversation_persistence and cookiecutter.use_mongodb %}
 from app.api.deps import ConversationSvc, get_conversation_service
-from app.schemas.conversation import ConversationCreate, MessageCreate, ToolCallCreate, ToolCallComplete
+from app.schemas.conversation import ConversationCreate, ConversationUpdate, MessageCreate, ToolCallCreate, ToolCallComplete
 {%- endif %}
 
 logger = logging.getLogger(__name__)
@@ -2236,8 +2275,11 @@ async def agent_websocket(
                     requested_conv_id = raw_data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        # Verify conversation exists
-                        await conv_service.get_conversation(UUID(requested_conv_id))
+                        # Verify conversation exists and update title if empty
+                        conv = await conv_service.get_conversation(UUID(requested_conv_id))
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            await conv_service.update_conversation(UUID(requested_conv_id), ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -2275,7 +2317,10 @@ async def agent_websocket(
                     requested_conv_id = raw_data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        conv_service.get_conversation(requested_conv_id)
+                        conv = conv_service.get_conversation(requested_conv_id)
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -2309,7 +2354,10 @@ async def agent_websocket(
             requested_conv_id = raw_data.get("conversation_id")
             if requested_conv_id:
                 current_conversation_id = requested_conv_id
-                await conv_service.get_conversation(requested_conv_id)
+                conv = await conv_service.get_conversation(requested_conv_id)
+                if not conv.title and user_message:
+                    title = user_message[:50] if len(user_message) > 50 else user_message
+                    await conv_service.update_conversation(requested_conv_id, ConversationUpdate(title=title))
             elif not current_conversation_id:
                 conv_data = ConversationCreate(
 {%- if cookiecutter.websocket_auth_jwt %}

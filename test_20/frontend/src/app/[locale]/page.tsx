@@ -55,17 +55,12 @@ export default async function HomePage() {
     },
   ];
 
-  const techStack = [
-    "Next.js 15",
-    "FastAPI",
-    "PydanticAI",
-    "PostgreSQL",
-    "Milvus",
-    "Redis",
-    "Celery",
-    "Tailwind CSS",
-    "TypeScript",
-    "Docker",
+  const techItems = [
+    "Next.js 15", "React 19", "TypeScript", "Tailwind CSS", "FastAPI", "PydanticAI",
+    "SQLModel", "Alembic", "PostgreSQL", "Redis", "Celery", "Milvus", "Docker",
+    "Traefik", "OpenRouter", "JWT Auth", "OAuth2", "WebSockets", "Logfire",
+    "OpenTelemetry", "PyMuPDF", "BM25", "Zustand", "TanStack Query", "Vitest",
+    "Playwright", "sentence-transformers", "next-intl", "Sonner", "Lucide Icons",
   ];
 
   return (
@@ -79,7 +74,7 @@ export default async function HomePage() {
 
       <main>
         {/* ── Hero ── */}
-        <section className="relative flex min-h-[calc(100svh-3.5rem)] items-center justify-center overflow-hidden px-4 sm:px-6">
+        <section className="relative flex min-h-svh items-center justify-center overflow-hidden px-4 sm:px-6">
           {/* Grid background */}
           <div className="grid-bg pointer-events-none absolute inset-0" />
 
@@ -178,17 +173,22 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* ── Tech Stack ── */}
-        <section className="border-t border-border/50 py-16">
-          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-            <h2 className="mb-6 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        {/* ── Tech Stack Marquee ── */}
+        <section className="border-t border-border/50 py-16 overflow-hidden">
+          <div className="mx-auto max-w-5xl px-4 text-center sm:px-6">
+            <h2 className="mb-10 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               {t("techStackTitle")}
             </h2>
-            <div className="flex flex-wrap justify-center gap-2">
-              {techStack.map((tech) => (
-                <Badge key={tech} variant="outline" className="px-3 py-1 text-sm">
+          </div>
+          <div className="marquee-container">
+            <div className="marquee-track marquee-left">
+              {[...techItems, ...techItems].map((tech, i) => (
+                <span
+                  key={`${tech}-${i}`}
+                  className="inline-flex shrink-0 items-center rounded-lg border border-border/60 bg-card px-5 py-2.5 text-sm font-medium text-foreground/80"
+                >
                   {tech}
-                </Badge>
+                </span>
               ))}
             </div>
           </div>

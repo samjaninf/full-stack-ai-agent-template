@@ -2,10 +2,6 @@
 {%- if cookiecutter.use_postgresql or cookiecutter.use_sqlite or cookiecutter.use_jwt or cookiecutter.include_example_crud or cookiecutter.enable_conversation_persistence or cookiecutter.enable_webhooks %}
 # ruff: noqa: I001, RUF022 - Imports structured for Jinja2 template conditionals
 {%- endif %}
-{%- if cookiecutter.use_postgresql or cookiecutter.use_sqlite %}
-
-from app.repositories.base import BaseRepository
-{%- endif %}
 {%- if cookiecutter.use_jwt %}
 
 from app.repositories import user as user_repo
@@ -28,9 +24,6 @@ from app.repositories import webhook as webhook_repo
 {%- endif %}
 
 __all__ = [
-{%- if cookiecutter.use_postgresql or cookiecutter.use_sqlite %}
-    "BaseRepository",
-{%- endif %}
 {%- if cookiecutter.use_jwt %}
     "user_repo",
 {%- endif %}

@@ -1,28 +1,67 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks";
 import { Button } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme";
 import { LanguageSwitcherCompact } from "@/components/language-switcher";
-import { ROUTES } from "@/lib/constants";
-import { LogOut, User, Menu } from "lucide-react";
+import { APP_NAME, ROUTES } from "@/lib/constants";
+import { cn } from "@/lib/utils";
+import { LogOut, Menu, LayoutDashboard, MessageSquare, Database, UserCircle } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui";
 import { useSidebarStore } from "@/stores";
+
+const navItems = [
+  { name: "Dashboard", href: ROUTES.DASHBOARD, icon: LayoutDashboard },
+  { name: "Chat", href: ROUTES.CHAT, icon: MessageSquare },
+  { name: "Knowledge Base", href: ROUTES.RAG, icon: Database },
+  { name: "Profile", href: ROUTES.PROFILE, icon: UserCircle },
+];
 
 export function Header() {
   const { user, isAuthenticated, logout } = useAuth();
   const { toggle } = useSidebarStore();
+  const pathname = usePathname();
 
   return (
     <header className="bg-background/95 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 w-full border-b backdrop-blur">
       <div className="flex h-14 items-center justify-between px-3 sm:px-6">
-        <Button variant="ghost" size="sm" className="h-10 w-10 p-0 md:hidden" onClick={toggle}>
-          <Menu className="h-5 w-5" />
-          <span className="sr-only">Toggle menu</span>
-        </Button>
+        {/* Left: mobile menu + app name + nav */}
+        <div className="flex items-center gap-1 sm:gap-4">
+          <Button variant="ghost" size="sm" className="h-10 w-10 p-0 md:hidden" onClick={toggle}>
+            <Menu className="h-5 w-5" />
+            <span className="sr-only">Toggle menu</span>
+          </Button>
 
-        <div className="hidden md:block" />
+          <Link href={ROUTES.DASHBOARD} className="text-sm font-bold tracking-tight sm:text-base">
+            {APP_NAME}
+          </Link>
 
+          {/* Desktop nav links */}
+          <nav className="hidden items-center gap-0.5 md:flex">
+            {navItems.map((item) => {
+              const isActive = pathname?.includes(item.href);
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium transition-colors",
+                    isActive
+                      ? "bg-secondary text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <item.icon className="h-3.5 w-3.5" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Right: language, theme, user */}
         <div className="flex items-center gap-2 sm:gap-3">
           <LanguageSwitcherCompact />
           <ThemeToggle />
@@ -30,7 +69,11 @@ export function Header() {
             <>
               <Button variant="ghost" size="sm" asChild className="h-10 px-2 sm:px-3">
                 <Link href={ROUTES.PROFILE} className="flex items-center gap-2">
-                  <User className="h-4 w-4" />
+                  <Avatar className="h-6 w-6">
+                    <AvatarFallback className="bg-brand/10 text-brand text-[10px]">
+                      {user?.email?.substring(0, 2).toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
                   <span className="hidden max-w-32 truncate sm:inline">{user?.email}</span>
                 </Link>
               </Button>

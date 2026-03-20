@@ -1,13 +1,12 @@
 export { Button, buttonVariants } from "./button";
 export { Input } from "./input";
 export { Label } from "./label";
-export {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
-  CardContent,
-} from "./card";
+export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from "./card";
 export { Badge, badgeVariants } from "./badge";
 export { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "./sheet";
+export { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription, DialogClose } from "./dialog";
+export { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogFooter, AlertDialogTitle, AlertDialogDescription, AlertDialogAction, AlertDialogCancel } from "./alert-dialog";
+export { Avatar, AvatarImage, AvatarFallback } from "./avatar";
+export { Skeleton } from "./skeleton";
+export { Separator } from "./separator";
+export { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "./tooltip";

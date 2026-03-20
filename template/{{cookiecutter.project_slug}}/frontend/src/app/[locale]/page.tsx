@@ -73,49 +73,26 @@ export default async function HomePage() {
 {%- endif %}
   ];
 
-  const techStack = [
-    "Next.js 15",
-    "FastAPI",
-{%- if cookiecutter.use_pydantic_ai %}
-    "PydanticAI",
-{%- elif cookiecutter.use_langchain %}
-    "LangChain",
-{%- elif cookiecutter.use_langgraph %}
-    "LangGraph",
-{%- elif cookiecutter.use_crewai %}
-    "CrewAI",
-{%- elif cookiecutter.use_deepagents %}
-    "DeepAgents",
-{%- endif %}
-{%- if cookiecutter.use_postgresql %}
-    "PostgreSQL",
-{%- elif cookiecutter.use_sqlite %}
-    "SQLite",
-{%- elif cookiecutter.use_mongodb %}
-    "MongoDB",
-{%- endif %}
-{%- if cookiecutter.use_milvus %}
-    "Milvus",
-{%- elif cookiecutter.use_qdrant %}
-    "Qdrant",
-{%- elif cookiecutter.use_chromadb %}
-    "ChromaDB",
-{%- elif cookiecutter.use_pgvector %}
-    "pgvector",
-{%- endif %}
-{%- if cookiecutter.enable_redis %}
-    "Redis",
-{%- endif %}
-{%- if cookiecutter.use_celery %}
-    "Celery",
-{%- elif cookiecutter.use_taskiq %}
-    "Taskiq",
-{%- endif %}
-    "Tailwind CSS",
-    "TypeScript",
-{%- if cookiecutter.enable_docker %}
-    "Docker",
-{%- endif %}
+  const techItems = [
+    "Next.js 15", "React 19", "TypeScript", "Tailwind CSS", "FastAPI",
+{%- if cookiecutter.use_pydantic_ai %} "PydanticAI",{%- endif %}
+{%- if cookiecutter.use_langchain %} "LangChain",{%- endif %}
+{%- if cookiecutter.use_langgraph %} "LangGraph",{%- endif %}
+{%- if cookiecutter.use_crewai %} "CrewAI",{%- endif %}
+{%- if cookiecutter.use_sqlmodel %} "SQLModel",{%- elif cookiecutter.use_sqlalchemy %} "SQLAlchemy",{%- endif %}
+{%- if cookiecutter.use_postgresql %} "PostgreSQL",{%- elif cookiecutter.use_sqlite %} "SQLite",{%- elif cookiecutter.use_mongodb %} "MongoDB",{%- endif %}
+{%- if cookiecutter.enable_redis %} "Redis",{%- endif %}
+{%- if cookiecutter.use_celery %} "Celery",{%- elif cookiecutter.use_taskiq %} "Taskiq",{%- endif %}
+{%- if cookiecutter.use_milvus %} "Milvus",{%- elif cookiecutter.use_qdrant %} "Qdrant",{%- elif cookiecutter.use_chromadb %} "ChromaDB",{%- endif %}
+{%- if cookiecutter.enable_docker %} "Docker",{%- endif %}
+{%- if cookiecutter.use_traefik %} "Traefik",{%- endif %}
+{%- if cookiecutter.use_jwt %} "JWT Auth",{%- endif %}
+{%- if cookiecutter.enable_oauth %} "OAuth2",{%- endif %}
+{%- if cookiecutter.enable_ai_agent %} "WebSockets",{%- endif %}
+{%- if cookiecutter.enable_logfire %} "Logfire", "OpenTelemetry",{%- endif %}
+{%- if cookiecutter.enable_rag %} "PyMuPDF", "BM25",{%- endif %}
+{%- if cookiecutter.enable_i18n %} "next-intl",{%- endif %}
+    "Pydantic v2", "Alembic", "Zustand", "TanStack Query", "Vitest",
   ];
 
   return (
@@ -128,7 +105,7 @@ export default async function HomePage() {
 
       <main>
         {/* Hero */}
-        <section className="relative flex min-h-[calc(100svh-3.5rem)] items-center justify-center overflow-hidden px-4 sm:px-6">
+        <section className="relative flex min-h-svh items-center justify-center overflow-hidden px-4 sm:px-6">
           <div className="grid-bg pointer-events-none absolute inset-0" />
           <div className="pointer-events-none absolute inset-0">
             <div className="absolute left-1/2 top-[5%] h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-brand/[0.12] blur-[120px] sm:h-[600px] sm:w-[800px] sm:blur-[200px]" />
@@ -211,17 +188,22 @@ export default async function HomePage() {
           </div>
         </section>
 
-        {/* Tech Stack */}
-        <section className="border-t border-border/50 py-16">
-          <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
-            <h2 className="mb-6 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+        {/* Tech Stack Marquee */}
+        <section className="border-t border-border/50 py-16 overflow-hidden">
+          <div className="mx-auto max-w-5xl px-4 text-center sm:px-6">
+            <h2 className="mb-10 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
               { {% if cookiecutter.enable_i18n %}t("techStackTitle"){% else %}"Built with modern technologies"{% endif %}}
             </h2>
-            <div className="flex flex-wrap justify-center gap-2">
-              {techStack.map((tech) => (
-                <Badge key={tech} variant="outline" className="px-3 py-1 text-sm">
+          </div>
+          <div className="marquee-container">
+            <div className="marquee-track marquee-left">
+              {[...techItems, ...techItems].map((tech, i) => (
+                <span
+                  key={`${tech}-${i}`}
+                  className="inline-flex shrink-0 items-center rounded-lg border border-border/60 bg-card px-5 py-2.5 text-sm font-medium text-foreground/80"
+                >
                   {tech}
-                </Badge>
+                </span>
               ))}
             </div>
           </div>

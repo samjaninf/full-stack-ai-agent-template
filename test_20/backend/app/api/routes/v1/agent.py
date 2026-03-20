@@ -30,6 +30,7 @@ from app.db.models.user import User
 from app.db.session import get_db_context
 from app.schemas.conversation import (
     ConversationCreate,
+    ConversationUpdate,
     MessageCreate,
     ToolCallCreate,
     ToolCallComplete,
@@ -153,8 +154,11 @@ async def agent_websocket(
                     requested_conv_id = data.get("conversation_id")
                     if requested_conv_id:
                         current_conversation_id = requested_conv_id
-                        # Verify conversation exists
-                        await conv_service.get_conversation(UUID(requested_conv_id))
+                        # Verify conversation exists and update title if empty
+                        conv = await conv_service.get_conversation(UUID(requested_conv_id))
+                        if not conv.title and user_message:
+                            title = user_message[:50] if len(user_message) > 50 else user_message
+                            await conv_service.update_conversation(UUID(requested_conv_id), ConversationUpdate(title=title))
                     elif not current_conversation_id:
                         # Create new conversation
                         conv_data = ConversationCreate(
@@ -199,7 +203,8 @@ async def agent_websocket(
             await manager.send_event(websocket, "user_prompt", {"content": user_message})
 
             try:
-                assistant = get_agent()
+                selected_model = data.get("model")
+                assistant = get_agent(model_name=selected_model)
                 model_history = build_message_history(conversation_history)
 
                 # Collect tool calls during streaming for persistence

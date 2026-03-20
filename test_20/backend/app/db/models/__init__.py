@@ -7,6 +7,7 @@ from app.db.models.item import Item
 from app.db.models.conversation import Conversation, Message, ToolCall
 from app.db.models.webhook import Webhook, WebhookDelivery
 from app.db.models.chat_file import ChatFile
+from app.db.models.rag_document import RAGDocument
 
 __all__ = [
     "User",
@@ -18,4 +19,5 @@ __all__ = [
     "Webhook",
     "WebhookDelivery",
     "ChatFile",
+    "RAGDocument",
 ]

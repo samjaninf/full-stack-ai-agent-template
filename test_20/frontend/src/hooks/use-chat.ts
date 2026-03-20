@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { nanoid } from "nanoid";
 import { useWebSocket } from "./use-websocket";
 import { useChatStore } from "@/stores";
@@ -22,6 +22,10 @@ export function useChat(options: UseChatOptions = {}) {
   const [currentMessageId, setCurrentMessageId] = useState<string | null>(null);
   // Use ref for groupId to avoid React state timing issues with rapid WebSocket events
   const currentGroupIdRef = useRef<string | null>(null);
+  // Message queue for sending while processing
+  const messageQueueRef = useRef<{ content: string; fileIds?: string[] }[]>([]);
+  // Selected model override
+  const modelRef = useRef<string | null>(null);
   // Human-in-the-Loop: pending tool approval state
   const [pendingApproval, setPendingApproval] = useState<PendingApproval | null>(null);
 
@@ -329,9 +333,8 @@ export function useChat(options: UseChatOptions = {}) {
     onMessage: handleWebSocketMessage,
   });
 
-  const sendChatMessage = useCallback(
+  const doSend = useCallback(
     (content: string, fileIds?: string[]) => {
-      // Add user message
       const userMessage: ChatMessage = {
         id: nanoid(),
         role: "user",
@@ -341,18 +344,36 @@ export function useChat(options: UseChatOptions = {}) {
       };
       addMessage(userMessage);
 
-      // Send to WebSocket
       setIsProcessing(true);
       const payload: Record<string, unknown> = {
         message: content,
         conversation_id: conversationId || null,
       };
-      if (fileIds?.length) {
-        payload.file_ids = fileIds;
-      }
+      if (fileIds?.length) payload.file_ids = fileIds;
+      if (modelRef.current) payload.model = modelRef.current;
       sendMessage(payload);
     },
     [addMessage, sendMessage, conversationId]
+  );
+
+  const sendChatMessage = useCallback(
+    (content: string, fileIds?: string[]) => {
+      if (isProcessing) {
+        // Queue the message — will be sent when current processing completes
+        messageQueueRef.current.push({ content, fileIds });
+        // Still show user message immediately
+        addMessage({
+          id: nanoid(),
+          role: "user",
+          content,
+          timestamp: new Date(),
+          fileIds,
+        });
+        return;
+      }
+      doSend(content, fileIds);
+    },
+    [isProcessing, doSend, addMessage]
   );
 
   // Human-in-the-Loop: send resume message with user decisions
@@ -398,6 +419,17 @@ export function useChat(options: UseChatOptions = {}) {
     [currentMessageId, updateMessage, sendMessage]
   );
 
+  // Drain message queue when processing finishes
+  useEffect(() => {
+    if (!isProcessing && messageQueueRef.current.length > 0) {
+      const next = messageQueueRef.current.shift();
+      if (next) {
+        // Small delay to let UI settle
+        setTimeout(() => doSend(next.content, next.fileIds), 100);
+      }
+    }
+  }, [isProcessing, doSend]);
+
   return {
     messages,
     isConnected,
@@ -406,6 +438,7 @@ export function useChat(options: UseChatOptions = {}) {
     disconnect,
     sendMessage: sendChatMessage,
     clearMessages,
+    setModel: (model: string | null) => { modelRef.current = model; },
     // Human-in-the-Loop support
     pendingApproval,
     sendResumeDecisions,

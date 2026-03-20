@@ -28,6 +28,10 @@ from app.db.models.webhook import Webhook, WebhookDelivery
 {%- set _ = models.append("ChatFile") %}
 from app.db.models.chat_file import ChatFile
 {%- endif %}
+{%- if cookiecutter.enable_rag and cookiecutter.enable_conversation_persistence %}
+{%- set _ = models.append("RAGDocument") %}
+from app.db.models.rag_document import RAGDocument
+{%- endif %}
 {%- if models %}
 
 __all__ = {{ models }}

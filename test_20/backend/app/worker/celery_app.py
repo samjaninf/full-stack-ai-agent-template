@@ -48,12 +48,6 @@ celery_app.conf.beat_schedule = {
     #     "task": "app.worker.tasks.examples.cleanup_task",
     #     "schedule": crontab(hour=0, minute=0),
     # },
-    # RAG scheduled tasks
-    "rag-reindex-daily": {
-        "task": "app.worker.tasks.rag_ingestion.reindex_collection",
-        "schedule": crontab(hour=2, minute=0),  # Daily at 2 AM
-        # collection_name defaults to RAGSettings.collection_name
-    },
 }
 
 

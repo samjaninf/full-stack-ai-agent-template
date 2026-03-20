@@ -46,6 +46,7 @@ function AuthenticatedChatContainer() {
     disconnect,
     sendMessage,
     clearMessages,
+    setModel,
     pendingApproval,
     sendResumeDecisions,
   } = useChat({
@@ -121,7 +122,7 @@ function AuthenticatedChatContainer() {
       isConnected={isConnected}
       isProcessing={isProcessing}
       sendMessage={sendMessage}
-
+      onModelChange={setModel}
       messagesEndRef={messagesEndRef}
       pendingApproval={pendingApproval}
       onResumeDecisions={sendResumeDecisions}
@@ -167,14 +168,22 @@ function LocalChatContainer() {
   );
 }
 
+const AVAILABLE_MODELS = [
+  { value: "", label: "Default" },
+  { value: "anthropic/claude-sonnet-4", label: "Claude Sonnet 4" },
+  { value: "anthropic/claude-3.5-sonnet", label: "Claude 3.5 Sonnet" },
+  { value: "openai/gpt-4o", label: "GPT-4o" },
+  { value: "openai/gpt-4o-mini", label: "GPT-4o Mini" },
+  { value: "google/gemini-2.5-flash-preview", label: "Gemini 2.5 Flash" },
+];
+
 interface ChatUIProps {
   messages: import("@/types").ChatMessage[];
   isConnected: boolean;
   isProcessing: boolean;
   sendMessage: (content: string, fileIds?: string[]) => void;
-
+  onModelChange?: (model: string | null) => void;
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
-  // Human-in-the-Loop support
   pendingApproval?: PendingApproval | null;
   onResumeDecisions?: (decisions: Decision[]) => void;
 }
@@ -184,6 +193,7 @@ function ChatUI({
   isConnected,
   isProcessing,
   sendMessage,
+  onModelChange,
   messagesEndRef,
   pendingApproval,
   onResumeDecisions,
@@ -221,18 +231,31 @@ function ChatUI({
 
       <div className="px-2 pb-2 sm:px-4 sm:pb-4">
         <div className="bg-card rounded-xl border p-3 shadow-sm sm:p-4">
-          {/* Status indicator */}
-          <div className="mb-2 flex items-center gap-1.5">
-            <span
-              className={`inline-block h-1.5 w-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
-            />
-            <span className="text-muted-foreground text-[11px]">
-              {isConnected ? "Connected" : "Disconnected"}
-            </span>
+          {/* Status bar with model selector */}
+          <div className="mb-2 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <span
+                className={`inline-block h-1.5 w-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
+              />
+              <span className="text-muted-foreground text-[11px]">
+                {isConnected ? "Connected" : "Disconnected"}
+              </span>
+            </div>
+            {onModelChange && (
+              <select
+                onChange={(e) => onModelChange(e.target.value || null)}
+                className="text-muted-foreground cursor-pointer appearance-none rounded border border-border bg-transparent px-2 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-ring"
+                defaultValue=""
+              >
+                {AVAILABLE_MODELS.map((m) => (
+                  <option key={m.value} value={m.value}>{m.label}</option>
+                ))}
+              </select>
+            )}
           </div>
           <ChatInput
             onSend={sendMessage}
-            disabled={!isConnected || isProcessing || !!pendingApproval}
+            disabled={!isConnected || !!pendingApproval}
             isProcessing={isProcessing}
           />
         </div>

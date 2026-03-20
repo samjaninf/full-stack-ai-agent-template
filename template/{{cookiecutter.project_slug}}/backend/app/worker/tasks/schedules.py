@@ -23,13 +23,6 @@ SCHEDULES = [
         "cron": "*/5 * * * *",  # Every 5 minutes
         "args": ["periodic-5min"],
     },
-{%- if cookiecutter.enable_rag %}
-    {
-        "task": "app.worker.tasks.rag_ingestion:reindex_collection_taskiq",
-        "cron": "0 2 * * *",  # Daily at 2 AM
-        "args": [],
-    },
-{%- endif %}
 ]
 {%- else %}
 # Taskiq not enabled for this project

@@ -26,9 +26,7 @@ class ConversationService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    # =========================================================================
     # Conversation Methods
-    # =========================================================================
 
     async def get_conversation(
         self,
@@ -133,9 +131,7 @@ class ConversationService:
             )
         return True
 
-    # =========================================================================
     # Message Methods
-    # =========================================================================
 
     async def get_message(self, message_id: UUID) -> Message:
         """Get message by ID.
@@ -211,9 +207,7 @@ class ConversationService:
             )
         return True
 
-    # =========================================================================
     # Tool Call Methods
-    # =========================================================================
 
     async def get_tool_call(self, tool_call_id: UUID) -> ToolCall:
         """Get tool call by ID.

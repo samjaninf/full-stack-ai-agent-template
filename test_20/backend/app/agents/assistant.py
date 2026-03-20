@@ -189,13 +189,16 @@ class AssistantAgent:
                 yield event
 
 
-def get_agent() -> AssistantAgent:
+def get_agent(model_name: str | None = None) -> AssistantAgent:
     """Factory function to create an AssistantAgent.
+
+    Args:
+        model_name: Override the default AI model.
 
     Returns:
         Configured AssistantAgent instance.
     """
-    return AssistantAgent()
+    return AssistantAgent(model_name=model_name)
 
 
 async def run_agent(

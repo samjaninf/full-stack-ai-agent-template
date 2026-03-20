@@ -2,11 +2,9 @@
 
 import Link from "next/link";
 import { useAuth } from "@/hooks";
-import { buttonVariants } from "@/components/ui";
 import { ThemeToggle } from "@/components/theme";
 import { LanguageSwitcherCompact } from "@/components/language-switcher";
 import { APP_NAME, ROUTES } from "@/lib/constants";
-import { cn } from "@/lib/utils";
 import { LogOut, User } from "lucide-react";
 
 interface LandingNavProps {
@@ -19,12 +17,15 @@ export function LandingNav({ signInLabel, getStartedLabel, dashboardLabel }: Lan
   const { user, isAuthenticated, logout } = useAuth();
 
   return (
-    <nav className="bg-background/80 sticky top-0 z-50 border-b border-border/50 backdrop-blur-sm">
-      <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4 sm:px-6">
-        <Link href={ROUTES.HOME} className="text-lg font-bold tracking-tight">
+    <div className="fixed top-0 left-0 right-0 z-50 flex justify-center px-4 pt-4">
+      <nav className="navbar-beam relative flex h-12 w-full max-w-3xl items-center justify-between rounded-full px-4 sm:px-6">
+        {/* Left — brand */}
+        <Link href={ROUTES.HOME} className="text-foreground text-sm font-bold tracking-tight">
           {APP_NAME}
         </Link>
-        <div className="flex items-center gap-2 sm:gap-3">
+
+        {/* Right — actions */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <LanguageSwitcherCompact />
           <ThemeToggle />
 
@@ -32,43 +33,40 @@ export function LandingNav({ signInLabel, getStartedLabel, dashboardLabel }: Lan
             <>
               <Link
                 href={ROUTES.DASHBOARD}
-                className={cn(buttonVariants({ size: "sm" }), "bg-brand text-brand-foreground hover:bg-brand-hover")}
+                className="rounded-full bg-brand px-4 py-1.5 text-xs font-semibold text-brand-foreground transition-colors hover:bg-brand-hover"
               >
                 {dashboardLabel}
               </Link>
-              <span className="text-muted-foreground hidden items-center gap-1 text-sm sm:flex">
-                <User className="h-3.5 w-3.5" />
+              <span className="text-muted-foreground hidden items-center gap-1 text-xs sm:flex">
+                <User className="h-3 w-3" />
                 {user?.email?.split("@")[0]}
               </span>
               <button
                 onClick={logout}
-                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "h-8 w-8 p-0")}
+                className="text-muted-foreground hover:text-foreground rounded-full p-1.5 transition-colors"
                 title="Logout"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut className="h-3.5 w-3.5" />
               </button>
             </>
           ) : (
             <>
               <Link
                 href={ROUTES.LOGIN}
-                className={cn(buttonVariants({ variant: "ghost", size: "sm" }))}
+                className="text-muted-foreground hover:text-foreground rounded-full px-3 py-1.5 text-xs font-medium transition-colors"
               >
                 {signInLabel}
               </Link>
               <Link
                 href={ROUTES.REGISTER}
-                className={cn(
-                  buttonVariants({ size: "sm" }),
-                  "bg-brand text-brand-foreground hover:bg-brand-hover hidden sm:inline-flex"
-                )}
+                className="hidden rounded-full bg-brand px-4 py-1.5 text-xs font-semibold text-brand-foreground transition-colors hover:bg-brand-hover sm:inline-flex"
               >
                 {getStartedLabel}
               </Link>
             </>
           )}
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 }

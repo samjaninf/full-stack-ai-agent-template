@@ -1,107 +1,135 @@
 {%- if cookiecutter.enable_rag %}
-"""RAG Config.
+"""RAG configuration."""
 
-Variables and constants used in the RAG feature to run it."""
 from enum import StrEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
+
 
 class DocumentExtensions(StrEnum):
     """Extensions supported by the RAG ingestion pipeline."""
+
     PDF = ".pdf"
     DOCX = ".docx"
     MD = ".md"
     TXT = ".txt"
 
-    
+
+# Known embedding models and their output dimensions.
+# Used to auto-set vector store dimension from model name.
+EMBEDDING_DIMENSIONS: dict[str, int] = {
+    # OpenAI
+    "text-embedding-3-small": 1536,
+    "text-embedding-3-large": 3072,
+    "text-embedding-ada-002": 1536,
+    # Voyage AI
+    "voyage-3": 1024,
+    "voyage-3-lite": 512,
+    "voyage-code-3": 1024,
+    # Google Gemini
+    "gemini-embedding-exp-03-07": 3072,
+    # SentenceTransformers (local)
+    "all-MiniLM-L6-v2": 384,
+    "all-mpnet-base-v2": 768,
+    "bge-small-en-v1.5": 384,
+    "bge-base-en-v1.5": 768,
+    "bge-large-en-v1.5": 1024,
+}
+
+
 class EmbeddingsConfig(BaseModel):
-    """Embeddings configuration for usage in RAG feature."""
-    {%- if cookiecutter.use_openai_embeddings %}
+    """Embeddings configuration. Dimension is auto-derived from model name."""
+
+{%- if cookiecutter.use_openai_embeddings %}
     model: str = "text-embedding-3-small"
     dim: int = 1536
-    {%- elif cookiecutter.use_voyage_embeddings %}
+{%- elif cookiecutter.use_voyage_embeddings %}
     model: str = "voyage-3"
     dim: int = 1024
-    {%- elif cookiecutter.use_gemini_embeddings %}
+{%- elif cookiecutter.use_gemini_embeddings %}
     model: str = "gemini-embedding-exp-03-07"
     dim: int = 3072
-    {%- elif cookiecutter.use_sentence_transformers %}
+{%- elif cookiecutter.use_sentence_transformers %}
     model: str = "all-MiniLM-L6-v2"
     dim: int = 384
-    {%- endif %}  
-    
-    
-{%- if cookiecutter.enable_reranker %}    
+{%- endif %}
+
+    @model_validator(mode="after")
+    def set_dim_from_model(self) -> "EmbeddingsConfig":
+        if self.model in EMBEDDING_DIMENSIONS:
+            self.dim = EMBEDDING_DIMENSIONS[self.model]
+        return self
+
+
+{%- if cookiecutter.enable_reranker %}
+
 class RerankerConfig(BaseModel):
-    """Reranker configuration for usage in RAG features."""
-    {%- if cookiecutter.use_cohere_reranker %}
+    """Reranker configuration."""
+
+{%- if cookiecutter.use_cohere_reranker %}
     model: str = "cohere"
-    {%- elif cookiecutter.use_cross_encoder_reranker %}
+{%- elif cookiecutter.use_cross_encoder_reranker %}
     model: str = "cross_encoder"
-    {%- endif %}
+{%- endif %}
 {%- endif %}
 
 
 class DocumentParser(BaseModel):
-    """Document parsing settings for RAG features.
-    
-    Note: This now only applies to non-PDF files (txt, md, docx).
-    PDF parsing is controlled separately via pdf_parser.
-    """
-    method: str = "python_native"  # Always python_native for non-PDF
+    """Document parsing settings (non-PDF files)."""
+
+    method: str = "python_native"
 
 
 class PdfParser(BaseModel):
-    """PDF parsing settings for RAG features."""
-    {%- if cookiecutter.use_llamaparse %}
+    """PDF parsing settings."""
+
+{%- if cookiecutter.use_llamaparse %}
     method: str = "llamaparse"
     api_key: str = ""
-    tier: str = "agentic"  # fast, cost_effective, agentic, agentic_plus
-    {%- else %}
+    tier: str = "agentic"
+{%- else %}
     method: str = "pymupdf"
-    {%- endif %}
+{%- endif %}
 
 
 class RAGSettings(BaseModel):
-    """Constants and variables used to setup the RAG features."""
-    
-    # Collection
+    """RAG pipeline configuration."""
+
     collection_name: str = "documents"
-    
-    # Documents
-    allowed_extensions: list[DocumentExtensions] = Field(default_factory=lambda: list(DocumentExtensions))
-    
+
+    allowed_extensions: list[DocumentExtensions] = Field(
+        default_factory=lambda: list(DocumentExtensions)
+    )
+
     # Chunking
     chunk_size: int = 512
     chunk_overlap: int = 50
-    chunking_strategy: str = "recursive"  # recursive, markdown, or fixed
-    enable_hybrid_search: bool = False  # BM25 + vector fusion
-    enable_ocr: bool = False  # OCR fallback for scanned PDFs (requires tesseract)
-    
+    chunking_strategy: str = "recursive"
+    enable_hybrid_search: bool = False
+    enable_ocr: bool = False
+
     # Embeddings
     embeddings_config: EmbeddingsConfig = Field(default_factory=EmbeddingsConfig)
-    
+
+{%- if cookiecutter.enable_reranker %}
     # Reranker
-    {%- if cookiecutter.enable_reranker %}
     reranker_config: RerankerConfig = Field(default_factory=RerankerConfig)
-    {%- endif %}
-    
-    # Document parsing
+{%- endif %}
+
+    # Parsers
     document_parser: DocumentParser = Field(default_factory=DocumentParser)
-    
-    # PDF parsing
     pdf_parser: PdfParser = Field(default_factory=PdfParser)
-    
+
 {%- if cookiecutter.enable_rag_image_description %}
     # Image description
     enable_image_description: bool = True
-    image_description_model: str = ""  # empty = use AI_MODEL from settings
+    image_description_model: str = ""
 {%- endif %}
 
-    {%- if cookiecutter.enable_google_drive_ingestion %}
-    # Ingestion
+    # Sources
+{%- if cookiecutter.enable_google_drive_ingestion %}
     gdrive_ingestion: bool = True
-    {%- else %}
+{%- else %}
     gdrive_ingestion: bool = False
-    {%- endif %}
+{%- endif %}
 {%- endif %}

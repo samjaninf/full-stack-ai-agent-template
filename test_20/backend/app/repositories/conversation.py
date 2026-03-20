@@ -13,9 +13,7 @@ from sqlalchemy.orm import selectinload
 
 from app.db.models.conversation import Conversation, Message, ToolCall
 
-# =============================================================================
 # Conversation Operations
-# =============================================================================
 
 
 async def get_conversation_by_id(
@@ -128,9 +126,7 @@ async def delete_conversation(db: AsyncSession, conversation_id: UUID) -> bool:
     return False
 
 
-# =============================================================================
 # Message Operations
-# =============================================================================
 
 
 async def get_message_by_id(db: AsyncSession, message_id: UUID) -> Message | None:
@@ -203,9 +199,7 @@ async def delete_message(db: AsyncSession, message_id: UUID) -> bool:
     return False
 
 
-# =============================================================================
 # ToolCall Operations
-# =============================================================================
 
 
 async def get_tool_call_by_id(db: AsyncSession, tool_call_id: UUID) -> ToolCall | None:

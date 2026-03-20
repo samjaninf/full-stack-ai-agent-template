@@ -90,6 +90,8 @@ class IngestionService:
             # Set source_path override if provided (e.g., from GDrive/S3)
             if source_path:
                 document.metadata.source_path = source_path
+                # Also fix filename when uploading via API (temp file has random name)
+                document.metadata.filename = Path(source_path).name
 
             # Deduplication check
             existing_id = None

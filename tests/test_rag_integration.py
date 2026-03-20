@@ -131,11 +131,6 @@ class TestRAGFilesExist:
         rag_tool = rag_project / "backend" / "app" / "agents" / "tools" / "rag_tool.py"
         assert rag_tool.exists(), "rag_tool.py should exist when RAG is enabled"
 
-    def test_rag_tasks_exist(self, rag_project) -> None:
-        """Test that rag_ingestion.py tasks exist."""
-        rag_tasks = rag_project / "backend" / "app" / "worker" / "tasks" / "rag_ingestion.py"
-        assert rag_tasks.exists(), "rag_ingestion.py should exist when RAG is enabled"
-
     def test_docker_compose_has_milvus(self, rag_project) -> None:
         """Test that docker-compose.yml has Milvus service."""
         docker_compose = rag_project / "docker-compose.yml"
@@ -173,70 +168,6 @@ class TestNonRAGProjectNoRAGFiles:
         """Test that rag API route does not exist."""
         rag_api = non_rag_project / "backend" / "app" / "api" / "routes" / "v1" / "rag.py"
         assert not rag_api.exists(), "rag.py should not exist when RAG is disabled"
-
-
-class TestRAGWithDifferentBackgroundTasks:
-    """Tests for RAG with different background task systems."""
-
-    def test_rag_celery_has_reindex_task(self, tmp_path) -> None:
-        """Test that Celery RAG project has reindex task."""
-        config = ProjectConfig(
-            project_name="rag_celery_task",
-            database=DatabaseType.POSTGRESQL,
-            auth=AuthType.JWT,
-            background_tasks=BackgroundTaskType.CELERY,
-            enable_redis=True,
-            enable_ai_agent=True,
-            rag_features=RAGFeatures(enable_rag=True),
-            enable_docker=True,
-        )
-        project = generate_project(config, tmp_path)
-        rag_tasks = project / "backend" / "app" / "worker" / "tasks" / "rag_ingestion.py"
-        content = rag_tasks.read_text()
-        # Use word boundary to avoid false matches
-        assert re.search(r"\bshared_task\b", content), (
-            "Celery project should have @shared_task decorator"
-        )
-
-    def test_rag_taskiq_has_reindex_task(self, tmp_path) -> None:
-        """Test that TaskIQ RAG project has reindex task."""
-        config = ProjectConfig(
-            project_name="rag_taskiq_task",
-            database=DatabaseType.POSTGRESQL,
-            auth=AuthType.JWT,
-            background_tasks=BackgroundTaskType.TASKIQ,
-            enable_redis=True,
-            enable_ai_agent=True,
-            rag_features=RAGFeatures(enable_rag=True),
-            enable_docker=True,
-        )
-        project = generate_project(config, tmp_path)
-        rag_tasks = project / "backend" / "app" / "worker" / "tasks" / "rag_ingestion.py"
-        content = rag_tasks.read_text()
-        # Use regex to match broker.task or @broker decorator
-        assert re.search(r"(broker\.task|@broker)", content), (
-            "TaskIQ project should have @broker.task decorator"
-        )
-
-    def test_rag_arq_has_reindex_task(self, tmp_path) -> None:
-        """Test that ARQ RAG project has reindex task."""
-        config = ProjectConfig(
-            project_name="rag_arq_task",
-            database=DatabaseType.POSTGRESQL,
-            auth=AuthType.JWT,
-            background_tasks=BackgroundTaskType.ARQ,
-            enable_redis=True,
-            enable_ai_agent=True,
-            rag_features=RAGFeatures(enable_rag=True),
-            enable_docker=True,
-        )
-        project = generate_project(config, tmp_path)
-        rag_tasks = project / "backend" / "app" / "worker" / "tasks" / "rag_ingestion.py"
-        content = rag_tasks.read_text()
-        # Use word boundary to avoid false matches
-        assert re.search(r"\breindex_collection_arq\b", content), (
-            "ARQ project should have reindex_collection_arq function"
-        )
 
 
 class TestRAGWithAIFrameworks:

@@ -1,18 +1,18 @@
 /**
  * RAG (Retrieval Augmented Generation) API client.
- * Provides methods for collection management and search.
- * Document ingestion is handled via CLI commands.
  */
 
-import { apiClient } from "./api-client";
+import { apiClient, ApiError } from "./api-client";
 
 export const RAG_API_ROUTES = {
   COLLECTIONS: "/v1/rag/collections",
   COLLECTIONS_INFO: (name: string) => `/v1/rag/collections/${name}/info`,
   COLLECTIONS_CREATE: (name: string) => `/v1/rag/collections/${name}`,
   COLLECTIONS_DELETE: (name: string) => `/v1/rag/collections/${name}`,
+  COLLECTIONS_DOCUMENTS: (name: string) => `/v1/rag/collections/${name}/documents`,
   COLLECTIONS_DOCUMENT_DELETE: (name: string, documentId: string) =>
     `/v1/rag/collections/${name}/documents/${documentId}`,
+  COLLECTIONS_INGEST: (name: string) => `/v1/rag/collections/${name}/ingest`,
   SEARCH: "/v1/rag/search",
 } as const;
 
@@ -56,37 +56,100 @@ export async function listCollections(): Promise<RAGCollectionList> {
   return apiClient.get<RAGCollectionList>(RAG_API_ROUTES.COLLECTIONS);
 }
 
-export async function getCollectionInfo(
-  collectionName: string
-): Promise<RAGCollectionInfo> {
-  return apiClient.get<RAGCollectionInfo>(
-    RAG_API_ROUTES.COLLECTIONS_INFO(collectionName)
-  );
+export async function getCollectionInfo(collectionName: string): Promise<RAGCollectionInfo> {
+  return apiClient.get<RAGCollectionInfo>(RAG_API_ROUTES.COLLECTIONS_INFO(collectionName));
 }
 
-export async function createCollection(
-  collectionName: string
-): Promise<{ message: string }> {
-  return apiClient.post<{ message: string }>(
-    RAG_API_ROUTES.COLLECTIONS_CREATE(collectionName)
-  );
+export async function createCollection(collectionName: string): Promise<{ message: string }> {
+  return apiClient.post<{ message: string }>(RAG_API_ROUTES.COLLECTIONS_CREATE(collectionName));
 }
 
 export async function deleteCollection(collectionName: string): Promise<void> {
   return apiClient.delete(RAG_API_ROUTES.COLLECTIONS_DELETE(collectionName));
 }
 
-export async function deleteDocument(
-  collectionName: string,
-  documentId: string
-): Promise<void> {
-  return apiClient.delete(
-    RAG_API_ROUTES.COLLECTIONS_DOCUMENT_DELETE(collectionName, documentId)
-  );
+export async function deleteDocument(collectionName: string, documentId: string): Promise<void> {
+  return apiClient.delete(RAG_API_ROUTES.COLLECTIONS_DOCUMENT_DELETE(collectionName, documentId));
 }
 
-export async function searchDocuments(
-  request: RAGSearchRequest
-): Promise<RAGSearchResponse> {
+export async function searchDocuments(request: RAGSearchRequest): Promise<RAGSearchResponse> {
   return apiClient.post<RAGSearchResponse>(RAG_API_ROUTES.SEARCH, request);
+}
+
+export interface RAGDocumentItem {
+  document_id: string;
+  filename: string;
+  filesize: number;
+  filetype: string;
+  chunk_count: number;
+  additional_info?: Record<string, unknown>;
+}
+
+export interface RAGDocumentList {
+  items: RAGDocumentItem[];
+  total: number;
+}
+
+export interface RAGIngestResult {
+  id: string;
+  status: string;
+  document_id: string | null;
+  filename: string;
+  collection: string;
+  message: string;
+}
+
+export interface RAGTrackedDocument {
+  id: string;
+  collection_name: string;
+  filename: string;
+  filesize: number;
+  filetype: string;
+  status: "processing" | "done" | "error";
+  error_message: string | null;
+  vector_document_id: string | null;
+  chunk_count: number;
+  has_file: boolean;
+  created_at: string | null;
+  completed_at: string | null;
+}
+
+export function getDocumentDownloadUrl(docId: string): string {
+  return `/api/v1/rag/documents/${docId}/download`;
+}
+
+export interface RAGTrackedDocumentList {
+  items: RAGTrackedDocument[];
+  total: number;
+}
+
+export async function listTrackedDocuments(collectionName?: string): Promise<RAGTrackedDocumentList> {
+  const params = collectionName ? `?collection_name=${encodeURIComponent(collectionName)}` : "";
+  return apiClient.get<RAGTrackedDocumentList>(`/v1/rag/documents${params}`);
+}
+
+export async function deleteTrackedDocument(docId: string): Promise<void> {
+  return apiClient.delete(`/v1/rag/documents/${docId}`);
+}
+
+export async function listDocuments(collectionName: string): Promise<RAGDocumentList> {
+  return apiClient.get<RAGDocumentList>(RAG_API_ROUTES.COLLECTIONS_DOCUMENTS(collectionName));
+}
+
+export async function ingestFile(collectionName: string, file: File, replace = false): Promise<RAGIngestResult> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const url = `/api${RAG_API_ROUTES.COLLECTIONS_INGEST(collectionName)}${replace ? "?replace=true" : ""}`;
+  const response = await fetch(url, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: "Upload failed" }));
+    throw new ApiError(response.status, error.detail || "Ingestion failed", error);
+  }
+
+  return response.json();
 }

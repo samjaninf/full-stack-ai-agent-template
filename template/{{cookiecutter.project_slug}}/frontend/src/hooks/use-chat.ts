@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { nanoid } from "nanoid";
 import { useWebSocket } from "./use-websocket";
 import { useChatStore } from "@/stores";
@@ -33,8 +33,8 @@ export function useChat() {
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentMessageId, setCurrentMessageId] = useState<string | null>(null);
-  // Use ref for groupId to avoid React state timing issues with rapid WebSocket events
   const currentGroupIdRef = useRef<string | null>(null);
+  const messageQueueRef = useRef<{ content: string; fileIds?: string[] }[]>([]);
   // Human-in-the-Loop: pending tool approval state
   const [pendingApproval, setPendingApproval] = useState<PendingApproval | null>(null);
 
@@ -340,19 +340,15 @@ export function useChat() {
     onMessage: handleWebSocketMessage,
   });
 
-  const sendChatMessage = useCallback(
+  const doSend = useCallback(
     (content: string, fileIds?: string[]) => {
-      // Add user message
-      const userMessage: ChatMessage = {
+      addMessage({
         id: nanoid(),
         role: "user",
         content,
         timestamp: new Date(),
         fileIds,
-      };
-      addMessage(userMessage);
-
-      // Send to WebSocket
+      });
       setIsProcessing(true);
 {%- if cookiecutter.enable_conversation_persistence and cookiecutter.use_database %}
       const payload: Record<string, unknown> = {
@@ -372,6 +368,18 @@ export function useChat() {
 {%- else %}
     [addMessage, sendMessage]
 {%- endif %}
+  );
+
+  const sendChatMessage = useCallback(
+    (content: string, fileIds?: string[]) => {
+      if (isProcessing) {
+        messageQueueRef.current.push({ content, fileIds });
+        addMessage({ id: nanoid(), role: "user", content, timestamp: new Date(), fileIds });
+        return;
+      }
+      doSend(content, fileIds);
+    },
+    [isProcessing, doSend, addMessage]
   );
 
   // Human-in-the-Loop: send resume message with user decisions
@@ -416,6 +424,16 @@ export function useChat() {
     },
     [currentMessageId, updateMessage, sendMessage]
   );
+
+  // Drain message queue when processing finishes
+  useEffect(() => {
+    if (!isProcessing && messageQueueRef.current.length > 0) {
+      const next = messageQueueRef.current.shift();
+      if (next) {
+        setTimeout(() => doSend(next.content, next.fileIds), 100);
+      }
+    }
+  }, [isProcessing, doSend]);
 
   return {
     messages,

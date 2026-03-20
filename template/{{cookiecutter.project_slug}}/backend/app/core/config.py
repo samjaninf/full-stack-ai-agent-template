@@ -411,7 +411,7 @@ class Settings(BaseSettings):
     @property
     def rag(self) -> "RAGSettings":
         """Build RAG-specific settings."""
-        from app.rag.config import RAGSettings, DocumentParser, PdfParser
+        from app.rag.config import RAGSettings, DocumentParser, PdfParser, EmbeddingsConfig
 
         {%- if cookiecutter.use_llamaparse %}
         pdf_parser = PdfParser(api_key=self.LLAMAPARSE_API_KEY, tier=self.LLAMAPARSE_TIER)
@@ -426,6 +426,7 @@ class Settings(BaseSettings):
             chunking_strategy=self.RAG_CHUNKING_STRATEGY,
             enable_hybrid_search=self.RAG_HYBRID_SEARCH,
             enable_ocr=self.RAG_ENABLE_OCR,
+            embeddings_config=EmbeddingsConfig(model=self.EMBEDDING_MODEL),
             document_parser=DocumentParser(),
             pdf_parser=pdf_parser,
 {%- if cookiecutter.enable_rag_image_description %}

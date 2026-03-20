@@ -14,9 +14,7 @@ from sqlalchemy.orm import selectinload
 from app.db.models.conversation import Conversation, Message, ToolCall
 
 
-# =============================================================================
 # Conversation Operations
-# =============================================================================
 
 
 async def get_conversation_by_id(
@@ -141,9 +139,7 @@ async def delete_conversation(db: AsyncSession, conversation_id: UUID) -> bool:
     return False
 
 
-# =============================================================================
 # Message Operations
-# =============================================================================
 
 
 async def get_message_by_id(db: AsyncSession, message_id: UUID) -> Message | None:
@@ -216,9 +212,7 @@ async def delete_message(db: AsyncSession, message_id: UUID) -> bool:
     return False
 
 
-# =============================================================================
 # ToolCall Operations
-# =============================================================================
 
 
 async def get_tool_call_by_id(db: AsyncSession, tool_call_id: UUID) -> ToolCall | None:
@@ -302,9 +296,7 @@ from sqlalchemy.orm import Session, selectinload
 from app.db.models.conversation import Conversation, Message, ToolCall
 
 
-# =============================================================================
 # Conversation Operations
-# =============================================================================
 
 
 def get_conversation_by_id(
@@ -429,9 +421,7 @@ def delete_conversation(db: Session, conversation_id: str) -> bool:
     return False
 
 
-# =============================================================================
 # Message Operations
-# =============================================================================
 
 
 def get_message_by_id(db: Session, message_id: str) -> Message | None:
@@ -504,9 +494,7 @@ def delete_message(db: Session, message_id: str) -> bool:
     return False
 
 
-# =============================================================================
 # ToolCall Operations
-# =============================================================================
 
 
 def get_tool_call_by_id(db: Session, tool_call_id: str) -> ToolCall | None:
@@ -589,9 +577,7 @@ from datetime import UTC, datetime
 from app.db.models.conversation import Conversation, Message, ToolCall
 
 
-# =============================================================================
 # Conversation Operations
-# =============================================================================
 
 
 async def get_conversation_by_id(
@@ -702,9 +688,7 @@ async def delete_conversation(conversation_id: str) -> bool:
     return False
 
 
-# =============================================================================
 # Message Operations
-# =============================================================================
 
 
 async def get_message_by_id(message_id: str) -> Message | None:
@@ -770,9 +754,7 @@ async def delete_message(message_id: str) -> bool:
     return False
 
 
-# =============================================================================
 # ToolCall Operations
-# =============================================================================
 
 
 async def get_tool_call_by_id(tool_call_id: str) -> ToolCall | None:

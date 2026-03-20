@@ -27,9 +27,7 @@ class ConversationService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    # =========================================================================
     # Conversation Methods
-    # =========================================================================
 
     async def get_conversation(
         self,
@@ -144,9 +142,7 @@ class ConversationService:
             )
         return True
 
-    # =========================================================================
     # Message Methods
-    # =========================================================================
 
     async def get_message(self, message_id: UUID) -> Message:
         """Get message by ID.
@@ -222,9 +218,7 @@ class ConversationService:
             )
         return True
 
-    # =========================================================================
     # Tool Call Methods
-    # =========================================================================
 
     async def get_tool_call(self, tool_call_id: UUID) -> ToolCall:
         """Get tool call by ID.
@@ -315,9 +309,7 @@ class ConversationService:
     def __init__(self, db: Session):
         self.db = db
 
-    # =========================================================================
     # Conversation Methods
-    # =========================================================================
 
     def get_conversation(
         self,
@@ -430,9 +422,7 @@ class ConversationService:
             )
         return True
 
-    # =========================================================================
     # Message Methods
-    # =========================================================================
 
     def get_message(self, message_id: str) -> Message:
         """Get message by ID.
@@ -508,9 +498,7 @@ class ConversationService:
             )
         return True
 
-    # =========================================================================
     # Tool Call Methods
-    # =========================================================================
 
     def get_tool_call(self, tool_call_id: str) -> ToolCall:
         """Get tool call by ID.
@@ -596,9 +584,7 @@ from app.schemas.conversation import (
 class ConversationService:
     """Service for conversation-related business logic."""
 
-    # =========================================================================
     # Conversation Methods
-    # =========================================================================
 
     async def get_conversation(
         self,
@@ -708,9 +694,7 @@ class ConversationService:
             )
         return True
 
-    # =========================================================================
     # Message Methods
-    # =========================================================================
 
     async def get_message(self, message_id: str) -> Message:
         """Get message by ID.
@@ -782,9 +766,7 @@ class ConversationService:
             )
         return True
 
-    # =========================================================================
     # Tool Call Methods
-    # =========================================================================
 
     async def get_tool_call(self, tool_call_id: str) -> ToolCall:
         """Get tool call by ID.

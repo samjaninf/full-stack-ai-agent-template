@@ -71,7 +71,9 @@ export default function DashboardPage() {
           } catch { /* ignore */ }
         }
         setRagStats({ collections: data.items.length, vectors: totalVectors });
-      } catch { /* ignore */ }
+      } catch {
+        setRagStats({ collections: 0, vectors: 0 });
+      }
     };
     loadRagStats();
 {%- endif %}

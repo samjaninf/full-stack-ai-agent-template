@@ -80,9 +80,20 @@ export function MessageItem({ message, groupPosition }: MessageItemProps) {
           </div>
         )}
 
-        {/* Only show message bubble if there's content or if it's streaming without tool calls */}
-        {(message.content ||
-          (message.isStreaming && (!message.toolCalls || message.toolCalls.length === 0))) && (
+        {/* Thinking indicator */}
+        {!isUser && message.isStreaming && !message.content && (!message.toolCalls || message.toolCalls.length === 0) && (
+          <div className="bg-muted flex items-center gap-2 rounded-2xl rounded-tl-sm px-4 py-2.5">
+            <div className="flex gap-1">
+              <span className="bg-muted-foreground/40 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:0ms]" />
+              <span className="bg-muted-foreground/40 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:150ms]" />
+              <span className="bg-muted-foreground/40 h-1.5 w-1.5 animate-bounce rounded-full [animation-delay:300ms]" />
+            </div>
+            <span className="text-muted-foreground text-xs">Thinking...</span>
+          </div>
+        )}
+
+        {/* Message bubble */}
+        {message.content && (
           <div
             className={cn(
               "relative rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5",
@@ -99,15 +110,24 @@ export function MessageItem({ message, groupPosition }: MessageItemProps) {
                 )}
               </div>
             )}
+          </div>
+        )}
 
-            {!isUser && message.content && !message.isStreaming && (
-              <div className="absolute -top-1 -right-1 sm:opacity-0 sm:group-hover:opacity-100">
-                <CopyButton
-                  text={message.content}
-                  className="bg-background/80 hover:bg-background shadow-sm"
-                />
-              </div>
-            )}
+        {/* Copy button — always visible on last assistant message, hover on others */}
+        {!isUser && message.content && !message.isStreaming && (
+          <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100">
+            <CopyButton
+              text={message.content}
+              className="bg-muted hover:bg-muted/80 h-7 w-7 rounded-md"
+            />
+          </div>
+        )}
+        {isUser && message.content && (
+          <div className="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100">
+            <CopyButton
+              text={message.content}
+              className="bg-secondary hover:bg-secondary/80 h-7 w-7 rounded-md"
+            />
           </div>
         )}
 
@@ -117,6 +137,13 @@ export function MessageItem({ message, groupPosition }: MessageItemProps) {
               <ToolCallCard key={toolCall.id} toolCall={toolCall} />
             ))}
           </div>
+        )}
+
+        {/* Timestamp */}
+        {!message.isStreaming && message.timestamp && (
+          <span className="text-muted-foreground text-[10px]">
+            {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+          </span>
         )}
       </div>
     </div>

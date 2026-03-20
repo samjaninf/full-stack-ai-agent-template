@@ -11,21 +11,17 @@ export default function DashboardLayout({
   return (
 {%- if cookiecutter.use_jwt or cookiecutter.use_api_key %}
     <AuthGuard>
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex h-screen flex-col">
+        <Header />
         <Sidebar />
-        <div className="flex min-w-0 flex-1 flex-col">
-          <Header />
-          <main className="flex-1 overflow-auto p-3 sm:p-6">{children}</main>
-        </div>
+        <main className="flex-1 overflow-auto p-3 sm:p-6">{children}</main>
       </div>
     </AuthGuard>
 {%- else %}
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-screen flex-col">
+      <Header />
       <Sidebar />
-      <div className="flex min-w-0 flex-1 flex-col">
-        <Header />
-        <main className="flex-1 overflow-auto p-3 sm:p-6">{children}</main>
-      </div>
+      <main className="flex-1 overflow-auto p-3 sm:p-6">{children}</main>
     </div>
 {%- endif %}
   );

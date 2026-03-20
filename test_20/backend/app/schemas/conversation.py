@@ -11,9 +11,7 @@ from pydantic import Field
 
 from app.schemas.base import BaseSchema, TimestampSchema
 
-# =============================================================================
 # Tool Call Schemas
-# =============================================================================
 
 
 class ToolCallBase(BaseSchema):
@@ -50,9 +48,7 @@ class ToolCallRead(ToolCallBase):
     duration_ms: int | None = None
 
 
-# =============================================================================
 # Message Schemas
-# =============================================================================
 
 
 class MessageBase(BaseSchema):
@@ -98,9 +94,7 @@ class MessageReadSimple(MessageBase, TimestampSchema):
     tokens_used: int | None = None
 
 
-# =============================================================================
 # Conversation Schemas
-# =============================================================================
 
 
 class ConversationBase(BaseSchema):
@@ -144,9 +138,7 @@ class ConversationList(BaseSchema):
     total: int
 
 
-# =============================================================================
 # Aggregated Schemas for API Responses
-# =============================================================================
 
 
 class MessageList(BaseSchema):
