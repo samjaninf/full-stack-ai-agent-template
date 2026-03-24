@@ -468,7 +468,7 @@ class TestRegisterModelsAuto:
 class TestGetSyncEngine:
     """Tests for get_sync_engine function."""
 
-    @patch("app.admin.create_engine")
+    @patch("sqlalchemy.create_engine")
     @patch("app.admin.settings")
     def test_creates_engine_with_settings(self, mock_settings, mock_create_engine):
         """Test that engine is created with correct settings."""
@@ -492,7 +492,7 @@ class TestGetSyncEngine:
         # Reset for other tests
         admin_module._sync_engine = None
 
-    @patch("app.admin.create_engine")
+    @patch("sqlalchemy.create_engine")
     @patch("app.admin.settings")
     def test_returns_cached_engine(self, mock_settings, mock_create_engine):
         """Test that engine is cached and reused."""
@@ -675,7 +675,7 @@ class TestAdminAuth:
         mock_verify.return_value = False
 
         mock_user = MagicMock()
-        mock_user.role = "admin"
+        mock_user.has_role.return_value = True
         mock_user.hashed_password = "hashed"
 
         mock_session = MagicMock()
@@ -706,7 +706,7 @@ class TestAdminAuth:
         mock_verify.return_value = True
 
         mock_user = MagicMock()
-        mock_user.role = "user"
+        mock_user.has_role.return_value = False
         mock_user.hashed_password = "hashed"
 
         mock_session = MagicMock()
@@ -739,7 +739,7 @@ class TestAdminAuth:
         mock_user = MagicMock()
         mock_user.id = "user-123"
         mock_user.email = "admin@test.com"
-        mock_user.role = "admin"
+        mock_user.has_role.return_value = True
         mock_user.hashed_password = "hashed"
 
         mock_session = MagicMock()
@@ -768,7 +768,7 @@ class TestAdminAuth:
         result = await auth_backend.logout(mock_request)
 
         assert result is True
-        mock_request.session.clear.assert_called_once()
+        assert len(mock_request.session) == 0
 
     @pytest.mark.anyio
     async def test_authenticate_returns_false_without_session(
@@ -813,7 +813,7 @@ class TestAdminAuth:
         mock_request.session = {"admin_user_id": "user-123"}
 
         mock_user = MagicMock()
-        mock_user.role = "admin"
+        mock_user.has_role.return_value = True
         mock_user.is_active = False
 
         mock_session = MagicMock()
@@ -840,7 +840,7 @@ class TestAdminAuth:
         mock_request.session = {"admin_user_id": "user-123"}
 
         mock_user = MagicMock()
-        mock_user.role = "user"
+        mock_user.has_role.return_value = False
         mock_user.is_active = True
 
         mock_session = MagicMock()
@@ -867,7 +867,7 @@ class TestAdminAuth:
         mock_request.session = {"admin_user_id": "user-123"}
 
         mock_user = MagicMock()
-        mock_user.role = "admin"
+        mock_user.has_role.return_value = True
         mock_user.is_active = True
 
         mock_session = MagicMock()

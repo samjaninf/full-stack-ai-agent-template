@@ -40,7 +40,8 @@ async def test_readiness_check_redis_healthy(client: AsyncClient, mock_redis):
     response = await client.get(f"{settings.API_V1_STR}/ready")
     assert response.status_code == 200
     data = response.json()
-    assert data["checks"]["redis"] is True
+    assert data["checks"]["redis"]["status"] == "healthy"
+    assert "latency_ms" in data["checks"]["redis"]
 
 
 @pytest.mark.anyio
@@ -52,8 +53,9 @@ async def test_readiness_check_redis_unhealthy(client: AsyncClient, mock_redis):
     # Should return 503 when Redis is down
     assert response.status_code == 503
     data = response.json()
-    assert data["status"] == "degraded"
-    assert data["checks"]["redis"] is False
+    assert data["status"] == "not_ready"
+    assert data["checks"]["redis"]["status"] == "unhealthy"
+    assert "error" in data["checks"]["redis"]
 {%- endif %}
 
 

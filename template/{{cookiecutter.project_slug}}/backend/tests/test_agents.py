@@ -6,6 +6,10 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 from app.agents.assistant import AssistantAgent, Deps, get_agent, run_agent
+from app.agents.prompts import DEFAULT_SYSTEM_PROMPT
+{%- if cookiecutter.enable_rag %}
+from app.agents.prompts import get_system_prompt_with_rag
+{%- endif %}
 from app.agents.tools.datetime_tool import get_current_datetime
 
 
@@ -44,7 +48,11 @@ class TestAssistantAgent:
     def test_init_with_defaults(self):
         """Test AssistantAgent initializes with defaults."""
         agent = AssistantAgent()
-        assert agent.system_prompt == "You are a helpful assistant."
+{%- if cookiecutter.enable_rag %}
+        assert agent.system_prompt == get_system_prompt_with_rag()
+{%- else %}
+        assert agent.system_prompt == DEFAULT_SYSTEM_PROMPT
+{%- endif %}
         assert agent._agent is None
 
     def test_init_with_custom_values(self):

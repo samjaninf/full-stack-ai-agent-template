@@ -74,7 +74,7 @@ class TestExceptions:
         assert error.code == "VALIDATION_ERROR"
 
 
-{%- if cookiecutter.enable_redis %}
+{%- if cookiecutter.enable_caching %}
 
 
 class TestCacheSetup:

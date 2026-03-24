@@ -64,12 +64,25 @@ class TestMigrations:
     def test_current_matches_head(self):
         """Test that current migration revision matches head after upgrade."""
         # Upgrade to head first
-        subprocess.run(
+        up = subprocess.run(
             [sys.executable, "-m", "alembic", "upgrade", "head"],
             capture_output=True,
             text=True,
             cwd=".",
         )
+        assert up.returncode == 0, f"Migration upgrade failed:\n{up.stderr}"
+
+        # Check if there are any migration revisions
+        heads = subprocess.run(
+            [sys.executable, "-m", "alembic", "heads"],
+            capture_output=True,
+            text=True,
+            cwd=".",
+        )
+        assert heads.returncode == 0
+
+        if not heads.stdout.strip():
+            pytest.skip("No migration revisions found — nothing to verify")
 
         # Check current
         result = subprocess.run(
@@ -79,7 +92,10 @@ class TestMigrations:
             cwd=".",
         )
         assert result.returncode == 0
-        assert "(head)" in result.stdout, f"Current revision is not at head:\n{result.stdout}"
+        assert "(head)" in result.stdout, (
+            f"Current revision is not at head:\n"
+            f"stdout: {result.stdout}\nstderr: {result.stderr}"
+        )
 {%- else %}
 """Migration tests — skipped (no SQL database configured)."""
 {%- endif %}
