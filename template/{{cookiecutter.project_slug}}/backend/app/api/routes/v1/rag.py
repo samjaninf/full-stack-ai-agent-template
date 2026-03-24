@@ -215,13 +215,13 @@ async def delete_document(
 async def ingest_file(
     name: str,
     background_tasks: BackgroundTasks,
-    file: UploadFile = File(...),
     rag_doc_svc: RAGDocumentSvc,
     ingestion_service: IngestionSvc,
     vector_store: VectorStoreSvc,
 {%- if cookiecutter.use_jwt %}
     _: CurrentAdmin,
 {%- endif %}
+    file: UploadFile = File(...),
     replace: bool = Query(False),
 ) -> Any:
     """Upload and ingest a file into a collection. Tracks status in DB."""
