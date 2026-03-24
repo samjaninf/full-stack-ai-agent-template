@@ -412,7 +412,19 @@ def logout(
 @router.get("/me", response_model=UserRead)
 def get_current_user_info(current_user: CurrentUser) -> Any:
     """Get current authenticated user information."""
-    return current_user
+    return UserRead(
+        id=str(current_user.id),
+        email=current_user.email,
+        full_name=current_user.full_name,
+        is_active=current_user.is_active,
+        role=current_user.role,
+{%- if cookiecutter.enable_oauth %}
+        oauth_provider=current_user.oauth_provider,
+{%- endif %}
+        avatar_url=current_user.avatar_url,
+        created_at=current_user.created_at,
+        updated_at=current_user.updated_at,
+    )
 {%- endif %}
 {%- else %}
 """Auth routes - not configured."""

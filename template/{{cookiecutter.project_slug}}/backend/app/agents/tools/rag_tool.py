@@ -71,27 +71,28 @@ async def search_knowledge_base(
         Formatted string with search results including citations.
     """
     import os
+    from typing import Any
 
-    service = get_retrieval_service()
+    service: Any = get_retrieval_service()
 
     default_collection = os.environ.get("RAG_DEFAULT_COLLECTION", "all")
     target_collection = collection or default_collection
 
     if collections and len(collections) > 1:
-        results = await service.retrieve_multi(  # type: ignore[attr-defined]
+        results = await service.retrieve_multi(
             query=query,
             collection_names=collections,
             limit=top_k,
         )
     elif target_collection == "all":
         try:
-            all_collections = await service.store.list_collections()  # type: ignore[attr-defined]
+            all_collections = await service.store.list_collections()
             if not all_collections:
                 return "No collections found in the knowledge base."
             if len(all_collections) == 1:
                 results = await service.retrieve(query=query, collection_name=all_collections[0], limit=top_k)
             else:
-                results = await service.retrieve_multi(query=query, collection_names=all_collections, limit=top_k)  # type: ignore[attr-defined]
+                results = await service.retrieve_multi(query=query, collection_names=all_collections, limit=top_k)
         except Exception as e:
             logger.error(f"Failed to list collections: {e}")
             return f"Error accessing knowledge base: {e}"

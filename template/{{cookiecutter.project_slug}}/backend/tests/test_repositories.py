@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-{%- if cookiecutter.use_postgresql or cookiecutter.use_sqlite %}
+{%- if cookiecutter.use_postgresql %}
 
 
 class TestUserRepository:
@@ -42,6 +42,42 @@ class TestUserRepository:
         mock_session.execute.return_value = mock_result
 
         result = await user_repo.get_by_email(mock_session, "notfound@example.com")
+
+        assert result is None
+{%- elif cookiecutter.use_sqlite %}
+
+
+class TestUserRepository:
+    """Tests for user repository functions."""
+
+    @pytest.fixture
+    def mock_session(self):
+        """Create a mock sync session."""
+        session = MagicMock()
+        return session
+
+    def test_get_by_email(self, mock_session):
+        """Test get_by_email returns user."""
+        from app.repositories import user as user_repo
+
+        mock_user = MagicMock()
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = mock_user
+        mock_session.execute.return_value = mock_result
+
+        result = user_repo.get_by_email(mock_session, "test@example.com")
+
+        assert result == mock_user
+
+    def test_get_by_email_not_found(self, mock_session):
+        """Test get_by_email returns None when not found."""
+        from app.repositories import user as user_repo
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none.return_value = None
+        mock_session.execute.return_value = mock_result
+
+        result = user_repo.get_by_email(mock_session, "notfound@example.com")
 
         assert result is None
 {%- elif cookiecutter.use_mongodb %}

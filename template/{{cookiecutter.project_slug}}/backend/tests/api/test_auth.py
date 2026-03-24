@@ -32,6 +32,10 @@ class MockUser:
         self.is_active = is_active
         self.role = role
         self.hashed_password = "hashed"
+        self.avatar_url = None
+{%- if cookiecutter.enable_oauth %}
+        self.oauth_provider = None
+{%- endif %}
         self.created_at = datetime.now(UTC)
         self.updated_at = datetime.now(UTC)
 
@@ -46,10 +50,17 @@ def mock_user() -> MockUser:
 def mock_user_service(mock_user: MockUser) -> MagicMock:
     """Create a mock user service."""
     service = MagicMock()
+{%- if cookiecutter.use_sqlite %}
+    service.authenticate = MagicMock(return_value=mock_user)
+    service.register = MagicMock(return_value=mock_user)
+    service.get_by_id = MagicMock(return_value=mock_user)
+    service.get_by_email = MagicMock(return_value=mock_user)
+{%- else %}
     service.authenticate = AsyncMock(return_value=mock_user)
     service.register = AsyncMock(return_value=mock_user)
     service.get_by_id = AsyncMock(return_value=mock_user)
     service.get_by_email = AsyncMock(return_value=mock_user)
+{%- endif %}
     return service
 
 

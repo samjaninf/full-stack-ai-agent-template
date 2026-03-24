@@ -1,7 +1,5 @@
-<h1 align="center">Full-Stack AI Agent Template</h1>
-
 <p align="center">
-  <b>Production-Ready AI/LLM Applications — In Minutes, Not Weeks</b>
+  <img src="https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/banner.png" alt="Full-Stack AI Agent Template" width="100%">
 </p>
 
 <p align="center">

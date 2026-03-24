@@ -144,7 +144,7 @@ class DocxDocumentParser(BaseDocumentParser):
         Returns:
             Document object with the file content.
         """
-        file: Any = DOCXDocument(filepath)
+        file: Any = DOCXDocument(str(filepath))
         page = DocumentPage(
             page_num=1,
             content="\n".join([p.text for p in file.paragraphs])
@@ -490,7 +490,7 @@ class DocxDocumentParser(BaseDocumentParser):
         Returns:
             Document object with the file content.
         """
-        file: Any = DOCXDocument(filepath)
+        file: Any = DOCXDocument(str(filepath))
         page = DocumentPage(
             page_num=1,
             content="\n".join([p.text for p in file.paragraphs])
