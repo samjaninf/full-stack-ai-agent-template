@@ -1,5 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
+from typing import Any
 
 from app.rag.models import CollectionInfo, Document, DocumentPageChunk, SearchResult, DocumentInfo
 
@@ -39,7 +40,7 @@ class BaseVectorStore(ABC):
     async def get_documents(self, collection_name: str) -> list[DocumentInfo]:
         """Returns list of unique documents in a collection."""
 
-    def _build_chunk_metadata(self, chunk: "DocumentPageChunk", document: Document) -> dict[str, object]:
+    def _build_chunk_metadata(self, chunk: "DocumentPageChunk", document: Document) -> dict[str, Any]:
         """Build metadata dict for a chunk."""
         meta = {
             "page_num": chunk.page_num,
@@ -56,9 +57,9 @@ class BaseVectorStore(ABC):
         """Sanitize document_id to prevent filter injection."""
         return document_id.replace('"', "").replace("\\", "")
 
-    def _group_documents(self, results: list[dict[str, object]]) -> list[DocumentInfo]:
+    def _group_documents(self, results: list[dict[str, Any]]) -> list[DocumentInfo]:
         """Group query results by parent_doc_id into DocumentInfo list."""
-        doc_map: dict[str, dict[str, object]] = {}
+        doc_map: dict[str, dict[str, Any]] = {}
         for item in results:
             doc_id = item.get("parent_doc_id")
             metadata = item.get("metadata", {})
@@ -320,7 +321,7 @@ class ChromaVectorStore(BaseVectorStore):
         else:
             self.client = chromadb.PersistentClient(path=app_settings.CHROMA_PERSIST_DIR)
 
-    def _get_collection(self, name: str) -> object:
+    def _get_collection(self, name: str) -> Any:
         return self.client.get_or_create_collection(
             name=name,
             metadata={"hnsw:space": "cosine"},
@@ -355,7 +356,7 @@ class ChromaVectorStore(BaseVectorStore):
 
         def _query():
             collection = self._get_collection(collection_name)
-            kwargs: dict[str, object] = {
+            kwargs: dict[str, Any] = {
                 "query_embeddings": [query_vector],
                 "n_results": limit,
                 "include": ["documents", "metadatas", "distances"],

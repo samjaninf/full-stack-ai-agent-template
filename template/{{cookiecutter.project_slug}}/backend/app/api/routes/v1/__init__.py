@@ -25,7 +25,7 @@ from app.api.routes.v1 import agent
 {%- if cookiecutter.enable_rag %}
 from app.api.routes.v1 import rag
 {%- endif %}
-{%- if cookiecutter.use_jwt %}
+{%- if cookiecutter.use_jwt and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 from app.api.routes.v1 import files
 {%- endif %}
 
@@ -77,7 +77,7 @@ v1_router.include_router(agent.router, tags=["agent"])
 v1_router.include_router(rag.router, prefix="/rag", tags=["rag"])
 {%- endif %}
 
-{%- if cookiecutter.use_jwt %}
+{%- if cookiecutter.use_jwt and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 
 # File upload/download routes
 v1_router.include_router(files.router, tags=["files"])

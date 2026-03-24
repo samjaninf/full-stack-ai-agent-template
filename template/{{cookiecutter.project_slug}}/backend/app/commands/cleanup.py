@@ -54,7 +54,7 @@ def cleanup(days: int, dry_run: bool, force: bool) -> None:
             deleted_count = 0  # Replace with actual count
             success(f"Deleted {deleted_count} records.")
 
-    asyncio.run(_cleanup())  # type: ignore[no-untyped-call]
+    asyncio.run(_cleanup())
 {%- elif cookiecutter.use_sqlite %}
     from app.db.session import SessionLocal
 

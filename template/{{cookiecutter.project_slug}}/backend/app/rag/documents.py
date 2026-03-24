@@ -144,7 +144,7 @@ class DocxDocumentParser(BaseDocumentParser):
         Returns:
             Document object with the file content.
         """
-        file = DOCXDocument(filepath)
+        file = DOCXDocument(filepath)  # type: ignore[arg-type]
         page = DocumentPage(
             page_num=1,
             content="\n".join([p.text for p in file.paragraphs])
@@ -229,7 +229,7 @@ class PyMuPDFParser(BaseDocumentParser):
                 return ""
             parts = []
             for table in tables.tables:
-                df = table.to_pandas()
+                df = table.to_pandas()  # type: ignore[no-untyped-call]
                 if not df.empty:
                     parts.append(df.to_markdown(index=False))
             return "\n\n".join(parts)
@@ -320,7 +320,7 @@ class PyMuPDFParser(BaseDocumentParser):
         doc.close()
 
         # Enrich metadata
-        additional: dict[str, object] = {}
+        additional: dict[str, Any] = {}
         if meta.get("title"):
             additional["pdf_title"] = meta["title"]
         if meta.get("author"):
@@ -490,7 +490,7 @@ class DocxDocumentParser(BaseDocumentParser):
         Returns:
             Document object with the file content.
         """
-        file = DOCXDocument(filepath)
+        file = DOCXDocument(filepath)  # type: ignore[arg-type]
         page = DocumentPage(
             page_num=1,
             content="\n".join([p.text for p in file.paragraphs])
@@ -575,7 +575,7 @@ class PyMuPDFParser(BaseDocumentParser):
                 return ""
             parts = []
             for table in tables.tables:
-                df = table.to_pandas()
+                df = table.to_pandas()  # type: ignore[no-untyped-call]
                 if not df.empty:
                     parts.append(df.to_markdown(index=False))
             return "\n\n".join(parts)
@@ -666,7 +666,7 @@ class PyMuPDFParser(BaseDocumentParser):
         doc.close()
 
         # Enrich metadata
-        additional: dict[str, object] = {}
+        additional: dict[str, Any] = {}
         if meta.get("title"):
             additional["pdf_title"] = meta["title"]
         if meta.get("author"):
@@ -870,7 +870,7 @@ class DocumentProcessor:
         {%- endif %}
 
     @staticmethod
-    def _create_splitter(settings: RAGSettings) -> object:
+    def _create_splitter(settings: RAGSettings) -> Any:
         """Create text splitter based on chunking strategy."""
         from langchain_text_splitters import (
             MarkdownHeaderTextSplitter,
@@ -907,7 +907,7 @@ class DocumentProcessor:
 
 {%- if cookiecutter.enable_rag_image_description %}
     @staticmethod
-    def _init_image_describer(settings: RAGSettings) -> object:
+    def _init_image_describer(settings: RAGSettings) -> Any:
         """Initialize the image describer using the configured AI framework."""
         from app.core.config import settings as app_settings
 

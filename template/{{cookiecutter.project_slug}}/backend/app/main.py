@@ -116,7 +116,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[{% if cookiecutter.enable_red
     from app.core.config import settings
     try:
         embedder = EmbeddingService(settings=settings.rag)
-        embedder.warmup()  # type: ignore[no-untyped-call]
+        embedder.warmup()
         state["embedding_service"] = embedder
     except Exception as e:
         logger.error(f"Embedding service warmup failed: {e}. RAG will not be available.")
@@ -126,7 +126,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[{% if cookiecutter.enable_red
     try:
         from app.rag.reranker import RerankService
         rerank_service = RerankService(settings=settings.rag)
-        rerank_service.warmup()  # type: ignore[no-untyped-call]
+        rerank_service.warmup()
         state["rerank_service"] = rerank_service
     except Exception as e:
         logger.warning(f"Reranker warmup failed: {e}. Reranking will be disabled.")

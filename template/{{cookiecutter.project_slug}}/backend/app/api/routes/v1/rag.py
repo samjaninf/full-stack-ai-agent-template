@@ -226,6 +226,9 @@ async def ingest_file(
     replace: bool = Query(False),
 ) -> Any:
     """Upload and ingest a file into a collection. Tracks status in DB."""
+    assert rag_doc_svc is not None
+    assert ingestion_service is not None
+    assert vector_store is not None
     from app.core.config import settings as app_settings
     from app.rag.config import get_supported_formats
 
@@ -367,6 +370,7 @@ def list_rag_documents(
     collection_name: str | None = Query(None),
 ) -> Any:
     """List tracked RAG documents."""
+    assert rag_doc_svc is not None
 {%- if cookiecutter.use_postgresql %}
     docs = await rag_doc_svc.list_documents(collection_name)
 {%- else %}
@@ -401,6 +405,7 @@ def download_rag_document(
 {%- endif %}
 ) -> Any:
     """Download the original file."""
+    assert rag_doc_svc is not None
     from fastapi.responses import FileResponse
 
     try:
@@ -428,6 +433,8 @@ def delete_rag_document(
 {%- endif %}
 ) -> Any:
     """Delete a document from SQL, vector store, and file storage."""
+    assert rag_doc_svc is not None
+    assert ingestion_service is not None
     try:
 {%- if cookiecutter.use_postgresql %}
         await rag_doc_svc.delete_document(doc_id, ingestion_service)
@@ -452,6 +459,7 @@ def retry_ingestion(
 {%- endif %}
 ) -> Any:
     """Retry a failed document ingestion."""
+    assert rag_doc_svc is not None
     try:
 {%- if cookiecutter.use_postgresql %}
         doc = await rag_doc_svc.retry_ingestion(doc_id)
@@ -479,6 +487,7 @@ def list_sync_logs(
     limit: int = Query(20, ge=1, le=100),
 ) -> Any:
     """List sync operation logs."""
+    assert rag_sync_svc is not None
 {%- if cookiecutter.use_postgresql %}
     logs = await rag_sync_svc.list_sync_logs(collection_name=collection_name, limit=limit)
 {%- else %}
@@ -510,6 +519,7 @@ async def trigger_local_sync(
 {%- endif %}
 ) -> Any:
     """Trigger a local directory sync via background task."""
+    assert rag_sync_svc is not None
 {%- if cookiecutter.use_postgresql %}
     sync_log = await rag_sync_svc.create_sync_log(
         source="local", collection_name=request.collection_name, mode=request.mode,
@@ -598,6 +608,7 @@ def cancel_sync(
 {%- endif %}
 ) -> Any:
     """Cancel a running sync operation."""
+    assert rag_sync_svc is not None
     try:
 {%- if cookiecutter.use_postgresql %}
         await rag_sync_svc.cancel_sync(sync_id)
@@ -626,6 +637,7 @@ def list_sync_sources(
 {%- endif %}
 ) -> Any:
     """List all configured sync sources."""
+    assert sync_source_svc is not None
 {%- if cookiecutter.use_postgresql %}
     sources = await sync_source_svc.list_sources()
 {%- else %}
@@ -659,6 +671,7 @@ def create_sync_source(
 {%- endif %}
 ) -> Any:
     """Create a new sync source configuration."""
+    assert sync_source_svc is not None
     try:
 {%- if cookiecutter.use_postgresql %}
         source = await sync_source_svc.create_source(data)
@@ -692,6 +705,7 @@ def update_sync_source(
 {%- endif %}
 ) -> Any:
     """Update an existing sync source configuration."""
+    assert sync_source_svc is not None
     try:
 {%- if cookiecutter.use_postgresql %}
         source = await sync_source_svc.update_source(source_id, data)
@@ -725,6 +739,7 @@ def delete_sync_source(
 {%- endif %}
 ) -> Any:
     """Delete a sync source configuration."""
+    assert sync_source_svc is not None
     try:
 {%- if cookiecutter.use_postgresql %}
         await sync_source_svc.delete_source(source_id)
@@ -745,6 +760,7 @@ async def trigger_sync_source(
 {%- endif %}
 ) -> Any:
     """Trigger a manual sync for a configured source."""
+    assert sync_source_svc is not None
     try:
 {%- if cookiecutter.use_postgresql %}
         sync_log = await sync_source_svc.trigger_sync(source_id)

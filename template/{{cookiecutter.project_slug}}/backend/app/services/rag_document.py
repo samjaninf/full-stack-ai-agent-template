@@ -7,6 +7,7 @@ file downloads, and cascading deletions across DB, vector store, and file storag
 
 import logging
 from datetime import UTC, datetime
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -117,7 +118,7 @@ class RAGDocumentService:
     async def delete_document(
         self,
         doc_id: str,
-        ingestion_service: object = None,
+        ingestion_service: Any = None,
     ) -> None:
         """Delete a document with cascading cleanup.
 
@@ -162,7 +163,7 @@ class RAGDocumentService:
             sql_delete(RAGDocument).where(RAGDocument.collection_name == collection_name)
         )
         await self.db.commit()
-        return result.rowcount  # type: ignore[return-value]
+        return result.rowcount  # type: ignore[no-any-return, attr-defined]
 
     async def get_download_info(self, doc_id: str) -> tuple[str, str, str]:
         """Get file download information for a document.
@@ -203,6 +204,7 @@ file downloads, and cascading deletions across DB, vector store, and file storag
 
 import logging
 from datetime import UTC, datetime
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -312,7 +314,7 @@ class RAGDocumentService:
     def delete_document(
         self,
         doc_id: str,
-        ingestion_service: object = None,
+        ingestion_service: Any = None,
     ) -> None:
         """Delete a document with cascading cleanup.
 

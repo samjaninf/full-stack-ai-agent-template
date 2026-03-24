@@ -48,7 +48,7 @@ from app.clients.redis import RedisClient
 
 async def get_redis(request: Request) -> RedisClient:
     """Get Redis client from lifespan state."""
-    return request.state.redis  # type: ignore[return-value]
+    return request.state.redis  # type: ignore[no-any-return]
 
 
 Redis = Annotated[RedisClient, Depends(get_redis)]
@@ -582,7 +582,7 @@ from app.rag.vectorstore import PgVectorStore
 def get_embedding_service(request: Request) -> EmbeddingService:
     """Get embedding service from lifespan state or create new if not available."""
     if request and hasattr(request.state, "embedding_service"):
-        return request.state.embedding_service  # type: ignore[return-value]
+        return request.state.embedding_service  # type: ignore[no-any-return]
     return EmbeddingService(settings=settings.rag)
 
 # Type Alias for the Embedder
@@ -593,7 +593,7 @@ from app.rag.vectorstore import BaseVectorStore
 def get_vectorstore(request: Request, embedder: EmbeddingSvc) -> BaseVectorStore:
     """Get vector store client from lifespan state or create new."""
     if request and hasattr(request.state, "vector_store"):
-        return request.state.vector_store  # type: ignore[return-value]
+        return request.state.vector_store  # type: ignore[no-any-return]
 {%- if cookiecutter.use_milvus %}
     return MilvusVectorStore(settings=settings.rag, embedding_service=embedder)
 {%- elif cookiecutter.use_qdrant %}

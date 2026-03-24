@@ -5,6 +5,7 @@
 Contains database operations for RAGDocument entities.
 """
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -63,7 +64,7 @@ async def update_status(
     error_message: str | None = None,
     vector_document_id: str | None = None,
     chunk_count: int | None = None,
-    completed_at: object = None,
+    completed_at: Any = None,
 ) -> RAGDocument | None:
     """Update the processing status of a RAG document."""
     doc = await db.get(RAGDocument, doc_id)
@@ -97,6 +98,8 @@ async def delete(db: AsyncSession, doc_id: UUID) -> bool:
 
 Contains database operations for RAGDocument entities.
 """
+
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -154,7 +157,7 @@ def update_status(
     error_message: str | None = None,
     vector_document_id: str | None = None,
     chunk_count: int | None = None,
-    completed_at: object = None,
+    completed_at: Any = None,
 ) -> RAGDocument | None:
     """Update the processing status of a RAG document."""
     doc = db.get(RAGDocument, doc_id)

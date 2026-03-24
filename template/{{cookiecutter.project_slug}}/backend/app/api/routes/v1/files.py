@@ -1,4 +1,4 @@
-{%- if cookiecutter.use_jwt %}
+{%- if cookiecutter.use_jwt and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 """File upload and download endpoints for chat attachments."""
 
 import logging

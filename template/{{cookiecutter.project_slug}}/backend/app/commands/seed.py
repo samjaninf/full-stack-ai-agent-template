@@ -134,7 +134,7 @@ def seed(
             else:
                 info("No records created.")
 
-    asyncio.run(_seed())  # type: ignore[no-untyped-call]
+    asyncio.run(_seed())
 {%- elif cookiecutter.use_sqlite %}
     from app.db.session import SessionLocal
 {%- if cookiecutter.use_jwt %}

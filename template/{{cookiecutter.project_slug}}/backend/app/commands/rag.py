@@ -531,7 +531,7 @@ def rag_sync_gdrive(collection: str, folder_id: str) -> None:
             for err in result.errors:
                 warning(f"  {err}")
 
-    asyncio.run(_sync())  # type: ignore[no-untyped-call]
+    asyncio.run(_sync())
 {%- endif %}
 
 {%- if cookiecutter.enable_s3_ingestion %}
@@ -559,7 +559,7 @@ def rag_sync_s3(collection: str, prefix: str, bucket: str) -> None:
             for err in result.errors:
                 warning(f"  {err}")
 
-    asyncio.run(_sync())  # type: ignore[no-untyped-call]
+    asyncio.run(_sync())
 {%- endif %}
 
 {%- if cookiecutter.use_postgresql or cookiecutter.use_sqlite %}
@@ -599,7 +599,7 @@ def rag_sources() -> None:
                     click.echo(f"    Last error: {s.last_error}")
                 click.echo()
 
-    asyncio.run(_list())  # type: ignore[no-untyped-call]
+    asyncio.run(_list())
 {%- else %}
     from contextlib import contextmanager
 
@@ -681,7 +681,7 @@ def rag_source_add(name: str, connector_type: str, collection: str, config_json:
             except ValueError as e:
                 error(f"Failed to create source: {e}")
 
-    asyncio.run(_create())  # type: ignore[no-untyped-call]
+    asyncio.run(_create())
 {%- else %}
     from contextlib import contextmanager
 
@@ -727,7 +727,7 @@ def rag_source_remove(source_id: str, yes: bool) -> None:
             except Exception as e:
                 error(f"Failed to remove source: {e}")
 
-    asyncio.run(_remove())  # type: ignore[no-untyped-call]
+    asyncio.run(_remove())
 {%- else %}
     from contextlib import contextmanager
 
@@ -790,7 +790,7 @@ def rag_source_sync(source_id: str | None, sync_all: bool) -> None:
                 except Exception as e:
                     error(f"Failed to trigger sync: {e}")
 
-    asyncio.run(_sync())  # type: ignore[no-untyped-call]
+    asyncio.run(_sync())
 {%- else %}
     from contextlib import contextmanager
 

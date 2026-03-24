@@ -5,6 +5,7 @@
 Contains database operations for SyncLog entities.
 """
 
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import select
@@ -63,7 +64,7 @@ async def update_status(
     skipped: int | None = None,
     failed: int | None = None,
     error_message: str | None = None,
-    completed_at: object = None,
+    completed_at: Any = None,
 ) -> SyncLog | None:
     """Update the status and counters of a sync log."""
     log = await db.get(SyncLog, sync_id)
@@ -93,6 +94,8 @@ async def update_status(
 
 Contains database operations for SyncLog entities.
 """
+
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -150,7 +153,7 @@ def update_status(
     skipped: int | None = None,
     failed: int | None = None,
     error_message: str | None = None,
-    completed_at: object = None,
+    completed_at: Any = None,
 ) -> SyncLog | None:
     """Update the status and counters of a sync log."""
     log = db.get(SyncLog, sync_id)
