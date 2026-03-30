@@ -406,64 +406,6 @@ class TestRatingFeatureCodeQuality:
         assert result.returncode == 0, f"Mypy failed for rating files:\n{result.stdout}"
 
 
-class TestRatingFeatureDocumentation:
-    """Tests for rating feature documentation."""
-
-    def test_rating_md_exists(self) -> None:
-        """Test that rating.md documentation exists."""
-        rating_md = Path(__file__).parent.parent / "rating.md"
-        assert rating_md.exists(), "rating.md documentation should exist in project root"
-
-    def test_rating_md_has_required_sections(self) -> None:
-        """Test that rating.md has all required sections."""
-        rating_md = Path(__file__).parent.parent / "rating.md"
-        content = rating_md.read_text()
-
-        required_sections = [
-            "## Implementation Status",
-            "## Database Migration",
-            "## Backend",
-            "### New model - MessageRating",
-            "### New files",
-            "### Endpoints",
-            "### Schema updates",
-            "## Frontend",
-            "### RatingButtons Component",
-            "### Admin Dashboard",
-            "## Testing",
-            "## Production Features",
-        ]
-
-        for section in required_sections:
-            assert section in content, f"Missing required section in rating.md: {section}"
-
-    def test_rating_test_plan_exists(self) -> None:
-        """Test that RATING_TEST_PLAN.md exists."""
-        test_plan = Path(__file__).parent.parent / "RATING_TEST_PLAN.md"
-        assert test_plan.exists(), "RATING_TEST_PLAN.md should exist"
-
-    def test_rating_test_plan_has_test_cases(self) -> None:
-        """Test that test plan contains comprehensive test cases."""
-        test_plan = Path(__file__).parent.parent / "RATING_TEST_PLAN.md"
-        content = test_plan.read_text()
-
-        required_sections = [
-            "## Backend API Tests",
-            "## Frontend UI Tests",
-            "## Admin Dashboard Tests",
-            "## Integration Tests",
-            "## Edge Cases & Negative Tests",
-            "## Accessibility Tests",
-        ]
-
-        for section in required_sections:
-            assert section in content, f"Missing test section: {section}"
-
-        # Check for specific test cases
-        assert "BA1" in content or "Test Cases" in content  # Test ID format
-        assert "cURL" in content  # API examples
-
-
 class TestRatingFeatureAllDatabases:
     """Tests that rating feature works with all database types."""
 

@@ -118,11 +118,16 @@ async def close_db() -> None:
 """Sync SQLite database session."""
 
 from collections.abc import Generator
+from pathlib import Path
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
+
+# Ensure the data directory exists for SQLite
+db_path = Path(settings.SQLITE_PATH)
+db_path.parent.mkdir(parents=True, exist_ok=True)
 
 engine = create_engine(
     settings.DATABASE_URL,

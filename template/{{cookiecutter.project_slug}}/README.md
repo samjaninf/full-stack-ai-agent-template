@@ -131,6 +131,18 @@ Chat with the agent at http://localhost:{{ cookiecutter.frontend_port }}/chat
 - **Add tools:** See `docs/howto/add-agent-tool.md`
 - **Agent config:** `.env` → `AI_MODEL`, `AI_TEMPERATURE`
 
+## Message Ratings
+
+Users can rate AI responses with 👍/👎 and optional feedback comments.
+Administrators can view analytics and export rating data.
+
+{%- if cookiecutter.use_frontend %}
+- Rate messages at http://localhost:{{ cookiecutter.frontend_port }}/chat
+- Admin dashboard at http://localhost:{{ cookiecutter.frontend_port }}/admin/ratings
+{%- endif %}
+
+See `docs/howto/use-ratings.md` for full documentation.
+
 {%- if cookiecutter.enable_rag %}
 
 ## RAG (Knowledge Base)

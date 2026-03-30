@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- **Message rating feature** — Users can like/dislike AI responses with optional feedback comments. Includes:
+  - 👍/👎 toggle buttons on assistant messages with optimistic UI updates
+  - Feedback dialog for dislikes with optional comment (up to 2000 chars)
+  - Admin ratings dashboard with summary statistics and bar chart
+  - Filters: All/Likes/Dislikes, with comments only
+  - Export to JSON/CSV for analysis
+  - Admin conversations page for viewing all user conversations
+  - Chat URL parameter (`?c=conversation_id`) for direct conversation links
+
 ## [0.2.2] - 2026-03-20
 
 ### Changed — CLI Simplification (Breaking)

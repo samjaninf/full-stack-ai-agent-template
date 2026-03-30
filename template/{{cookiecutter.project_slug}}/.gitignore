@@ -105,5 +105,5 @@ Thumbs.db
 
 # Project specific
 {%- if cookiecutter.use_sqlite %}
-{{ cookiecutter.project_slug }}.db
+data/
 {%- endif %}

@@ -3,6 +3,7 @@
 # ruff: noqa: I001 - Imports structured for Jinja2 template conditionals
 
 from logging.config import fileConfig
+from pathlib import Path
 
 from alembic import context
 from sqlalchemy import engine_from_config, pool
@@ -45,6 +46,13 @@ if config.config_file_name is not None:
 target_metadata = SQLModel.metadata
 {%- else %}
 target_metadata = Base.metadata
+{%- endif %}
+
+
+# Ensure SQLite data directory exists before connecting
+{%- if cookiecutter.use_sqlite %}
+db_path = Path(settings.SQLITE_PATH)
+db_path.parent.mkdir(parents=True, exist_ok=True)
 {%- endif %}
 
 

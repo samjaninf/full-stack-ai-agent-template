@@ -315,6 +315,7 @@ Generated projects include **CLAUDE.md** and **AGENTS.md** files optimized for A
 - **RAG** - Document ingestion, vector search, reranking (Milvus, Qdrant, ChromaDB, pgvector)
 - **WebSocket Streaming** - Real-time responses with full event access
 - **Conversation Persistence** - Save chat history to database
+- **Message Ratings** - Like/dislike responses with feedback, admin analytics
 - **Image Description** - Extract images from documents, describe via LLM vision
 - **Multimodal Embeddings** - Google Gemini embedding model (text + images)
 - **Document Sources** - Local files, API upload, Google Drive, S3/MinIO

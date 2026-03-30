@@ -51,6 +51,7 @@ dependencies = [
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
     "email-validator>=2.0.0",
+    "requests>=2.33.0",
 ]
 
 [project.optional-dependencies]
@@ -178,5 +179,6 @@ exclude_lines = [
 [dependency-groups]
 dev = [
     "mypy>=1.19.1",
+    "pip-audit>=2.10.0",
     "pytest-cov>=7.0.0",
 ]

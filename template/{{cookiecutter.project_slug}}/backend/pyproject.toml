@@ -14,6 +14,7 @@ dependencies = [
     "pydantic[email]>=2.10.0",
     "pydantic-settings>=2.6.0",
     "python-multipart>=0.0.12",
+    "requests>=2.33.0",
 {%- if cookiecutter.enable_orjson %}
     "orjson>=3.10.0",
 {%- endif %}
@@ -60,9 +61,6 @@ dependencies = [
     "pyjwt>=2.9.0",
     "bcrypt>=4.0.0",
     "python-multipart>=0.0.12",
-{%- endif %}
-{%- if cookiecutter.use_jwt and not cookiecutter.enable_rate_limiting %}
-    "slowapi>=0.1.9",
 {%- endif %}
 {%- if cookiecutter.enable_oauth %}
     "authlib>=1.3.0",

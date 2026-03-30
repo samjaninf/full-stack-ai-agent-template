@@ -104,7 +104,7 @@ class Settings(BaseSettings):
 {%- if cookiecutter.use_sqlite %}
 
     # === Database (SQLite sync) ===
-    SQLITE_PATH: str = "./{{ cookiecutter.project_slug }}.db"
+    SQLITE_PATH: str = "./data/{{ cookiecutter.project_slug }}.db"
 
     @computed_field  # type: ignore[prop-decorator]
     @property

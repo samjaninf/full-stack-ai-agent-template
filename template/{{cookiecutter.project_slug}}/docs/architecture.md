@@ -24,6 +24,7 @@ services, which in turn delegate to repositories.
 | **`services/`** | **Business logic, orchestration** |
 | ↳ `user.py` | User CRUD, profile updates |
 | ↳ `conversation.py` | Conversation & message management |
+| ↳ `message_rating.py` | Message rating CRUD, statistics, export |
 | ↳ `file_upload.py` | Chat file upload handling |
 | ↳ `file_storage.py` | File storage abstraction (local / S3) |
 {%- if cookiecutter.enable_rag %}
@@ -35,6 +36,7 @@ services, which in turn delegate to repositories.
 | ↳ `user.py` | User queries |
 | ↳ `conversation.py` | Conversation queries |
 | ↳ `chat_file.py` | Chat file queries |
+| ↳ `message_rating.py` | Message rating queries |
 {%- if cookiecutter.enable_rag %}
 | ↳ `rag_document.py` | RAG document queries |
 | ↳ `sync_log.py` | Sync log queries |
@@ -44,6 +46,7 @@ services, which in turn delegate to repositories.
 | ↳ `user.py` | User schemas |
 | ↳ `conversation.py` | Conversation & message schemas |
 | ↳ `file.py` | File upload schemas |
+| ↳ `message_rating.py` | Message rating schemas |
 {%- if cookiecutter.enable_rag %}
 | ↳ `rag.py` | RAG query/response schemas |
 | ↳ `sync_source.py` | Sync source schemas |
@@ -52,6 +55,7 @@ services, which in turn delegate to repositories.
 | ↳ `user.py` | User model |
 | ↳ `conversation.py` | Conversation & message models |
 | ↳ `chat_file.py` | Chat file model |
+| ↳ `message_rating.py` | Message rating model |
 | ↳ `webhook.py` | Webhook model |
 {%- if cookiecutter.enable_rag %}
 | ↳ `rag_document.py` | RAG document model |

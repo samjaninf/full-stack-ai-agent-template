@@ -502,21 +502,21 @@ async def get_current_user_ws(
 
     if not auth_token:
         await websocket.close(code=4001, reason="Missing authentication token")
-        return
+        return None
 
     payload = verify_token(auth_token)
     if payload is None:
         await websocket.close(code=4001, reason="Invalid or expired token")
-        return
+        return None
 
     if payload.get("type") != "access":
         await websocket.close(code=4001, reason="Invalid token type")
-        return
+        return None
 
     user_id = payload.get("sub")
     if user_id is None:
         await websocket.close(code=4001, reason="Invalid token payload")
-        return
+        return None
 {%- if cookiecutter.use_postgresql %}
 
     from app.db.session import get_db_context
@@ -527,7 +527,7 @@ async def get_current_user_ws(
 
         if not user.is_active:
             await websocket.close(code=4001, reason="User account is disabled")
-            return
+            return None
 
         # Detach from session to avoid "instance not bound to a Session" errors
         # when the User object is used after the context manager exits
@@ -541,7 +541,7 @@ async def get_current_user_ws(
 
     if not user.is_active:
         await websocket.close(code=4001, reason="User account is disabled")
-        return
+        return None
 
     return user
 {%- elif cookiecutter.use_sqlite %}
@@ -554,7 +554,7 @@ async def get_current_user_ws(
 
         if not user.is_active:
             await websocket.close(code=4001, reason="User account is disabled")
-            return
+            return None
 
         # Detach from session for consistency with async behavior
         db.expunge(user)

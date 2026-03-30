@@ -120,7 +120,7 @@ Computed properties:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `SQLITE_PATH` | `./{{ cookiecutter.project_slug }}.db` | Path to SQLite database file |
+| `SQLITE_PATH` | `./data/{{ cookiecutter.project_slug }}.db` | Path to SQLite database file |
 {%- endif %}
 
 {%- if cookiecutter.enable_redis %}
