@@ -73,7 +73,7 @@ class ConversationService:
 
             # Collect all message IDs to fetch ratings in bulk
             all_message_ids: list[UUID] = []
-            conv_messages_map: dict[str, list[Message]] = {}
+            conv_messages_map: dict[str, list[Message{%- if cookiecutter.use_jwt %} | MessageRead{%- endif %}]] = {}
 
             for conv in items:
                 messages, _ = await self.list_messages(conv.id, skip=0, limit=self.MESSAGE_EXPORT_LIMIT, include_tool_calls=True)
@@ -371,7 +371,8 @@ class ConversationService:
 {%- if cookiecutter.use_jwt %}
         user_id: UUID | None = None,
 {%- endif %}
-    ) -> tuple[list[Message], int]:
+{%- if cookiecutter.use_jwt %}
+    ) -> tuple[list[Message | MessageRead], int]:
         """List messages in a conversation.
 
         Returns:
@@ -392,7 +393,6 @@ class ConversationService:
         )
         total = await conversation_repo.count_messages(self.db, conversation_id)
 
-{%- if cookiecutter.use_jwt %}
         # Enrich messages with rating data if user_id is provided
         if user_id is not None and items:
             message_ids = [msg.id for msg in items]
@@ -422,16 +422,32 @@ class ConversationService:
             }
 
             # Construct enriched schema objects with rating data
-            enriched: list[MessageRead] = []
+            enriched: list[Message | MessageRead] = []
             for msg in items:
                 msg_schema = MessageRead.model_validate(msg)
                 msg_schema.user_rating = user_ratings.get(msg.id)
                 msg_schema.rating_count = rating_counts.get(msg.id)
                 enriched.append(msg_schema)
-            return enriched, total  # type: ignore[return-value]
-        return items, total
+            return enriched, total
+        return list(items), total
 {%- else %}
-        return items, total
+    ) -> tuple[list[Message], int]:
+        """List messages in a conversation.
+
+        Returns:
+            Tuple of (messages, total_count).
+        """
+        # Verify conversation exists
+        await self.get_conversation(conversation_id)
+        items = await conversation_repo.get_messages_by_conversation(
+            self.db,
+            conversation_id,
+            skip=skip,
+            limit=limit,
+            include_tool_calls=include_tool_calls,
+        )
+        total = await conversation_repo.count_messages(self.db, conversation_id)
+        return list(items), total
 {%- endif %}
 
     async def add_message(
@@ -618,7 +634,7 @@ class ConversationService:
 
             # Collect all message IDs to fetch ratings in bulk
             all_message_ids: list[str] = []
-            conv_messages_map: dict[str, list[Message]] = {}
+            conv_messages_map: dict[str, list[Message{%- if cookiecutter.use_jwt %} | MessageRead{%- endif %}]] = {}
 
             for conv in items:
                 messages, _ = self.list_messages(conv.id, skip=0, limit=self.MESSAGE_EXPORT_LIMIT, include_tool_calls=True)
@@ -911,7 +927,8 @@ class ConversationService:
 {%- if cookiecutter.use_jwt %}
         user_id: str | None = None,
 {%- endif %}
-    ) -> tuple[list[Message], int]:
+{%- if cookiecutter.use_jwt %}
+    ) -> tuple[list[Message | MessageRead], int]:
         """List messages in a conversation.
 
         Returns:
@@ -932,7 +949,6 @@ class ConversationService:
         )
         total = conversation_repo.count_messages(self.db, conversation_id)
 
-{%- if cookiecutter.use_jwt %}
         # Enrich messages with rating data if user_id is provided
         if user_id is not None and items:
             # Get all message IDs
@@ -963,16 +979,32 @@ class ConversationService:
             }
 
             # Construct enriched schema objects with rating data
-            enriched: list[MessageRead] = []
+            enriched: list[Message | MessageRead] = []
             for msg in items:
                 msg_schema = MessageRead.model_validate(msg)
                 msg_schema.user_rating = user_ratings.get(msg.id)
                 msg_schema.rating_count = rating_counts.get(msg.id)
                 enriched.append(msg_schema)
-            return enriched, total  # type: ignore[return-value]
-        return items, total
+            return enriched, total
+        return list(items), total
 {%- else %}
-        return items, total
+    ) -> tuple[list[Message], int]:
+        """List messages in a conversation.
+
+        Returns:
+            Tuple of (messages, total_count).
+        """
+        # Verify conversation exists
+        self.get_conversation(conversation_id)
+        items = conversation_repo.get_messages_by_conversation(
+            self.db,
+            conversation_id,
+            skip=skip,
+            limit=limit,
+            include_tool_calls=include_tool_calls,
+        )
+        total = conversation_repo.count_messages(self.db, conversation_id)
+        return list(items), total
 {%- endif %}
 
     def add_message(
@@ -1329,7 +1361,8 @@ class ConversationService:
 {%- if cookiecutter.use_jwt %}
         user_id: str | None = None,
 {%- endif %}
-    ) -> tuple[list[Message], int]:
+{%- if cookiecutter.use_jwt %}
+    ) -> tuple[list[Message | MessageRead], int]:
         """List messages in a conversation.
 
         Returns:
@@ -1349,7 +1382,6 @@ class ConversationService:
         )
         total = await conversation_repo.count_messages(conversation_id)
 
-{%- if cookiecutter.use_jwt %}
         # Enrich messages with rating data if user_id is provided
         if user_id is not None and items:
             # Get all message IDs
@@ -1389,16 +1421,31 @@ class ConversationService:
             }
 
             # Construct enriched schema objects with rating data
-            enriched: list[MessageRead] = []
+            enriched: list[Message | MessageRead] = []
             for msg in items:
                 msg_schema = MessageRead.model_validate(msg)
                 msg_schema.user_rating = user_rating_map.get(msg.id)
                 msg_schema.rating_count = rating_count_map.get(msg.id)
                 enriched.append(msg_schema)
-            return enriched, total  # type: ignore[return-value]
-        return items, total
+            return enriched, total
+        return list(items), total
 {%- else %}
-        return items, total
+    ) -> tuple[list[Message], int]:
+        """List messages in a conversation.
+
+        Returns:
+            Tuple of (messages, total_count).
+        """
+        # Verify conversation exists
+        await self.get_conversation(conversation_id)
+        items = await conversation_repo.get_messages_by_conversation(
+            conversation_id,
+            skip=skip,
+            limit=limit,
+            include_tool_calls=include_tool_calls,
+        )
+        total = await conversation_repo.count_messages(conversation_id)
+        return list(items), total
 {%- endif %}
 
     async def add_message(

@@ -109,9 +109,9 @@ async def get_all_conversations_with_count(
             (Conversation.title.ilike(f"%{safe_search}%", escape="\\"))
             | Conversation.id.cast(String).ilike(f"{safe_search}%", escape="\\")
         )
-    total = (await db.execute(count_query)).scalar() or 0
+    total: int = (await db.execute(count_query)).scalar() or 0
 
-    return rows, total
+    return [tuple(row) for row in rows], total
 {%- endif %}
 
 
@@ -448,9 +448,9 @@ def get_all_conversations_with_count(
             (Conversation.title.ilike(f"%{safe_search}%", escape="\\"))
             | Conversation.id.cast(String).ilike(f"{safe_search}%", escape="\\")
         )
-    total = db.execute(count_query).scalar() or 0
+    total: int = db.execute(count_query).scalar() or 0
 
-    return rows, total
+    return [tuple(row) for row in rows], total
 {%- endif %}
 
 
