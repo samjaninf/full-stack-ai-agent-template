@@ -64,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- **pgvector `vectorstore.py` f-string SyntaxError** — `metadata JSONB DEFAULT '{}'::jsonb` was rendered inside a Python f-string, causing `SyntaxError: f-string: empty expression not allowed` in generated projects using pgvector. Escaped the braces so the f-string renders `{}` literally. (#65)
+
 #### Telegram Channel Code Review Fixes
 
 - **`channels/router.py`** — Made `route()` always `async def` (was sync for SQLite, causing `asyncio.get_event_loop().run_until_complete()` crash). Removed broken `_handle_command_sync`, `_resolve_identity_sync`, `_resolve_session_sync` methods. Added SQLite branches to all async methods

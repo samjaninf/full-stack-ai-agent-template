@@ -479,7 +479,7 @@ class PgVectorStore(BaseVectorStore):
                     parent_doc_id VARCHAR(100),
                     content TEXT,
                     embedding vector({self.dim}),
-                    metadata JSONB DEFAULT '{% raw %}{}{% endraw %}'::jsonb
+                    metadata JSONB DEFAULT '{% raw %}{{}}{% endraw %}'::jsonb
                 )
             """))
             await session.execute(text(f"""
