@@ -21,7 +21,10 @@ export async function POST(request: NextRequest) {
       }
     );
 
-    const response = NextResponse.json({ message: "Token refreshed" });
+    const response = NextResponse.json({
+      access_token: data.access_token,
+      message: "Token refreshed",
+    });
 
     // Update access token cookie
     response.cookies.set("access_token", data.access_token, {

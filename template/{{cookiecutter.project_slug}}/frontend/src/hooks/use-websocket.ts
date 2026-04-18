@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseWebSocketOptions {
   url: string;
+  /** WebSocket subprotocols (e.g. ["access_token.<jwt>", "chat"]) */
+  protocols?: string[];
   onMessage?: (event: MessageEvent) => void;
   onOpen?: () => void;
   onClose?: () => void;
@@ -15,6 +17,7 @@ interface UseWebSocketOptions {
 
 export function useWebSocket({
   url,
+  protocols,
   onMessage,
   onOpen,
   onClose,
@@ -45,7 +48,7 @@ export function useWebSocket({
   const connect = useCallback(() => {
     if (wsRef.current?.readyState === WebSocket.OPEN || wsRef.current?.readyState === WebSocket.CONNECTING) return;
 
-    const ws = new WebSocket(url);
+    const ws = protocols && protocols.length > 0 ? new WebSocket(url, protocols) : new WebSocket(url);
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -73,7 +76,7 @@ export function useWebSocket({
     ws.onerror = (error) => {
       onErrorRef.current?.(error);
     };
-  }, [url, reconnect, reconnectInterval, maxReconnectAttempts]);
+  }, [url, protocols, reconnect, reconnectInterval, maxReconnectAttempts]);
 
   const disconnect = useCallback(() => {
     if (reconnectTimeoutRef.current) {

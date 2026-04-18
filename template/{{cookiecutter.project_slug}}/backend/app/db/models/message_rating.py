@@ -1,4 +1,10 @@
-"""Message rating model for user feedback on AI responses."""
+"""Message rating model for user feedback on AI responses.
+
+This module is only imported when JWT auth is enabled (see
+`app/db/models/__init__.py` and `alembic/env.py`).
+"""
+
+{%- if cookiecutter.use_jwt %}
 
 {%- if cookiecutter.use_postgresql and cookiecutter.use_sqlmodel %}
 import uuid
@@ -46,7 +52,6 @@ class MessageRating(TimestampMixin, SQLModel, table=True):
             index=True,
         ),
     )
-{%- if cookiecutter.use_jwt %}
     user_id: uuid.UUID = Field(
         sa_column=Column(
             PG_UUID(as_uuid=True),
@@ -55,30 +60,18 @@ class MessageRating(TimestampMixin, SQLModel, table=True):
             index=True,
         ),
     )
-{%- else %}
-    user_id: uuid.UUID = Field(
-        sa_column=Column(
-            PG_UUID(as_uuid=True),
-            nullable=False,
-            index=True,
-        ),
-    )
-{%- endif %}
     rating: int = Field(sa_column=Column(Integer, nullable=False))  # 1 or -1
     comment: str | None = Field(
         default=None,
         sa_column=Column(Text, nullable=True),
     )
 
-    # Relationships
     message: "Message" = Relationship(
         sa_relationship_kwargs={"foreign_keys": "MessageRating.message_id"}
     )
-{%- if cookiecutter.use_jwt %}
     user: "User" = Relationship(
         sa_relationship_kwargs={"foreign_keys": "MessageRating.user_id"}
     )
-{%- endif %}
 
     def __repr__(self) -> str:
         return f"<MessageRating(id={self.id}, rating={self.rating})>"
@@ -103,8 +96,6 @@ class MessageRating(Base, TimestampMixin):
     """User rating for AI assistant messages."""
 
     __tablename__ = "message_ratings"
-
-    # Unique constraint: one rating per user per message
     __table_args__ = (
         UniqueConstraint("message_id", "user_id", name="uq_message_user_rating"),
         CheckConstraint("rating IN (1, -1)", name="ck_rating_value"),
@@ -119,34 +110,23 @@ class MessageRating(Base, TimestampMixin):
         nullable=False,
         index=True,
     )
-{%- if cookiecutter.use_jwt %}
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-{%- else %}
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
-        nullable=False,
-        index=True,
-    )
-{%- endif %}
     rating: Mapped[int] = mapped_column(Integer, nullable=False)  # 1 or -1
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Relationships
     message: Mapped["Message"] = relationship(
         "Message",
         foreign_keys="MessageRating.message_id",
     )
-{%- if cookiecutter.use_jwt %}
     user: Mapped["User"] = relationship(
         "User",
         foreign_keys="MessageRating.user_id",
     )
-{%- endif %}
 
     def __repr__(self) -> str:
         return f"<MessageRating(id={self.id}, rating={self.rating})>"
@@ -163,23 +143,11 @@ from app.db.base import TimestampMixin
 
 if TYPE_CHECKING:
     from app.db.models.conversation import Message
-{%- if cookiecutter.use_jwt %}
     from app.db.models.user import User
-{%- endif %}
 
 
 class MessageRating(TimestampMixin, SQLModel, table=True):
-    """User rating for AI assistant messages.
-
-    Attributes:
-        id: Unique rating identifier
-        message_id: The message being rated (assistant messages only)
-        user_id: The user who submitted the rating
-        rating: 1 for like, -1 for dislike
-        comment: Optional feedback comment
-        created_at: When the rating was submitted
-        updated_at: When the rating was last modified
-    """
+    """User rating for AI assistant messages."""
 
     __tablename__ = "message_ratings"
     __table_args__ = (
@@ -199,7 +167,6 @@ class MessageRating(TimestampMixin, SQLModel, table=True):
             index=True,
         ),
     )
-{%- if cookiecutter.use_jwt %}
     user_id: str = Field(
         sa_column=Column(
             String(36),
@@ -208,30 +175,18 @@ class MessageRating(TimestampMixin, SQLModel, table=True):
             index=True,
         ),
     )
-{%- else %}
-    user_id: str = Field(
-        sa_column=Column(
-            String(36),
-            nullable=False,
-            index=True,
-        ),
-    )
-{%- endif %}
     rating: int = Field(sa_column=Column(Integer, nullable=False))  # 1 or -1
     comment: str | None = Field(
         default=None,
         sa_column=Column(Text, nullable=True),
     )
 
-    # Relationships
     message: "Message" = Relationship(
         sa_relationship_kwargs={"foreign_keys": "MessageRating.message_id"}
     )
-{%- if cookiecutter.use_jwt %}
     user: "User" = Relationship(
         sa_relationship_kwargs={"foreign_keys": "MessageRating.user_id"}
     )
-{%- endif %}
 
     def __repr__(self) -> str:
         return f"<MessageRating(id={self.id}, rating={self.rating})>"
@@ -248,17 +203,13 @@ from app.db.base import Base, TimestampMixin
 
 if TYPE_CHECKING:
     from app.db.models.conversation import Message
-{%- if cookiecutter.use_jwt %}
     from app.db.models.user import User
-{%- endif %}
 
 
 class MessageRating(Base, TimestampMixin):
     """User rating for AI assistant messages."""
 
     __tablename__ = "message_ratings"
-
-    # Unique constraint: one rating per user per message
     __table_args__ = (
         UniqueConstraint("message_id", "user_id", name="uq_message_user_rating"),
         CheckConstraint("rating IN (1, -1)", name="ck_rating_value"),
@@ -273,34 +224,23 @@ class MessageRating(Base, TimestampMixin):
         nullable=False,
         index=True,
     )
-{%- if cookiecutter.use_jwt %}
     user_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("users.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-{%- else %}
-    user_id: Mapped[str] = mapped_column(
-        String(36),
-        nullable=False,
-        index=True,
-    )
-{%- endif %}
     rating: Mapped[int] = mapped_column(Integer, nullable=False)  # 1 or -1
     comment: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Relationships
     message: Mapped["Message"] = relationship(
         "Message",
         foreign_keys="MessageRating.message_id",
     )
-{%- if cookiecutter.use_jwt %}
     user: Mapped["User"] = relationship(
         "User",
         foreign_keys="MessageRating.user_id",
     )
-{%- endif %}
 
     def __repr__(self) -> str:
         return f"<MessageRating(id={self.id}, rating={self.rating})>"
@@ -309,7 +249,7 @@ class MessageRating(Base, TimestampMixin):
 {%- elif cookiecutter.use_mongodb %}
 from datetime import UTC, datetime
 
-from beanie import Document, Link
+from beanie import Document
 from pydantic import Field
 from pymongo import ASCENDING, DESCENDING, IndexModel
 
@@ -331,11 +271,7 @@ class MessageRating(Document):
 
     message_id: str
     conversation_id: str
-{%- if cookiecutter.use_jwt %}
     user_id: str
-{%- else %}
-    user_id: str
-{%- endif %}
     rating: RatingValue
     comment: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
@@ -344,19 +280,16 @@ class MessageRating(Document):
     class Settings:
         name = "message_ratings"
         indexes = [
-            # Unique constraint: one rating per user per message (enforced)
             IndexModel([("message_id", ASCENDING), ("user_id", ASCENDING)], unique=True),
-            # Lookup by message
             "message_id",
-            # Lookup by user
             "user_id",
-            # Admin queries with date filtering
             IndexModel([("created_at", DESCENDING)]),
-            # Conversation validation queries
             "conversation_id",
         ]
 
 
+{%- endif %}
+
 {%- else %}
-"""Message rating models - not configured."""
+"""Message rating model - requires JWT auth (not configured)."""
 {%- endif %}

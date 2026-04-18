@@ -24,9 +24,11 @@ export async function POST(request: NextRequest) {
       headers: { Authorization: `Bearer ${data.access_token}` },
     });
 
-    // Set HTTP-only cookies for tokens
+    // Set HTTP-only cookies for tokens. Also return the access_token in the
+    // body so the client can use it for cross-origin WebSocket auth.
     const response = NextResponse.json({
       user,
+      access_token: data.access_token,
       message: "Login successful",
     });
 

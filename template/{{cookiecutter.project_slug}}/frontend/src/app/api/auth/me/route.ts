@@ -16,7 +16,10 @@ export async function GET(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(data);
+    // Return the access token alongside user data so the client can use it
+    // for WebSocket auth via Sec-WebSocket-Protocol. Security tradeoff: this
+    // exposes the httpOnly cookie to JS, same as the cross-origin WS needs.
+    return NextResponse.json({ ...data, access_token: accessToken });
   } catch (error) {
     if (error instanceof BackendApiError) {
       if (error.status === 401) {

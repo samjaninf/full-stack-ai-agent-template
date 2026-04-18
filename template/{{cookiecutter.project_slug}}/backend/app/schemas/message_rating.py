@@ -3,7 +3,6 @@
 from datetime import datetime
 from enum import IntEnum
 from typing import Any
-import html
 import re
 
 {%- if cookiecutter.use_postgresql %}
@@ -23,33 +22,23 @@ class RatingValue(IntEnum):
 
 
 def _sanitize_comment(comment: str | None) -> str | None:
-    """Sanitize user comment to prevent XSS and remove malicious content.
+    """Normalize user comment for storage.
 
-    Args:
-        comment: Raw user input
-
-    Returns:
-        Sanitized comment or None
+    Strips whitespace and removes dangerous control characters. HTML escaping
+    is intentionally NOT done here — the comment is stored raw and escaped
+    at render time (React does this automatically; CSV export escapes
+    separately against formula injection).
     """
     if not comment:
         return None
 
-    # Strip leading/trailing whitespace
     comment = comment.strip()
-
     if not comment:
         return None
 
-    # Remove null bytes and other control characters (except newlines/tabs)
-    comment = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', comment)
+    # Strip null bytes and control chars (keep \t, \n, \r)
+    comment = re.sub(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]", "", comment)
 
-    # Unescape first to prevent double-escaping on re-rating
-    comment = html.unescape(comment)
-
-    # HTML escape to prevent XSS
-    comment = html.escape(comment)
-
-    # Limit length
     return comment[:2000]
 
 

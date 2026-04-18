@@ -13,9 +13,9 @@ from sqlalchemy import select, func, case
 
 from app.core.exceptions import NotFoundError
 from app.db.models.conversation import Conversation, Message, ToolCall
-from app.db.models.user import User
 {%- if cookiecutter.use_jwt %}
 from app.db.models.message_rating import MessageRating
+from app.db.models.user import User
 {%- endif %}
 from app.repositories import conversation_repo
 from app.schemas.conversation import (

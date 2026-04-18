@@ -476,19 +476,44 @@ CurrentAdmin = Annotated[User, Depends(RoleChecker(UserRole.ADMIN))]
 
 
 # WebSocket authentication dependency
-from fastapi import WebSocket, Query, Cookie
+from fastapi import WebSocket, Cookie
+
+
+_WS_TOKEN_PROTOCOL_PREFIX = "access_token."
+
+
+def _extract_ws_auth(websocket: WebSocket) -> tuple[str | None, str | None]:
+    """Parse Sec-WebSocket-Protocol header for an auth token + app subprotocol.
+
+    Clients pass the token as a subprotocol of the form
+    ``access_token.<JWT>`` alongside an optional application subprotocol
+    (e.g. ``chat``). Returns (token, app_subprotocol) — either may be None.
+    """
+    raw = websocket.headers.get("sec-websocket-protocol") or ""
+    token: str | None = None
+    app_subprotocol: str | None = None
+    for proto in (p.strip() for p in raw.split(",") if p.strip()):
+        if proto.startswith(_WS_TOKEN_PROTOCOL_PREFIX):
+            token = proto[len(_WS_TOKEN_PROTOCOL_PREFIX):]
+        elif app_subprotocol is None:
+            app_subprotocol = proto
+    return token, app_subprotocol
 
 
 async def get_current_user_ws(
     websocket: WebSocket,
-    token: str | None = Query(None, alias="token"),
     access_token: str | None = Cookie(None),
 ) -> User:
-    """Get current user from WebSocket JWT token.
+    """Authenticate a WebSocket connection.
 
-    Token can be passed either as:
-    - Query parameter: ws://...?token=<jwt>
-    - Cookie: access_token cookie (set by HTTP login)
+    Token sources, checked in order:
+    1. ``Sec-WebSocket-Protocol`` header, in the form ``access_token.<JWT>``.
+       The chosen application subprotocol (e.g. ``chat``) is echoed back on
+       ``accept()`` via ``websocket.state.accept_subprotocol``.
+    2. Same-origin ``access_token`` cookie (fallback for same-origin clients).
+
+    Tokens in query strings are NOT accepted — they leak into logs and
+    Referer headers.
 
     Raises:
         AuthenticationError: If token is invalid or user not found.
@@ -497,8 +522,10 @@ async def get_current_user_ws(
 
     from app.core.security import verify_token
 
-    # Try query parameter first, then cookie
-    auth_token = token or access_token
+    subprotocol_token, app_subprotocol = _extract_ws_auth(websocket)
+    websocket.state.accept_subprotocol = app_subprotocol
+
+    auth_token = subprotocol_token or access_token
 
     if not auth_token:
         await websocket.close(code=4001, reason="Missing authentication token")

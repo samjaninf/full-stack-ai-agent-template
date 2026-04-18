@@ -370,58 +370,20 @@ export function useChat() {
 {%- endif %}
   );
 
-  // Get access token from auth store (in-memory, fetched after login)
+  // Access token lives in memory only (populated by login/refresh responses).
+  // It is sent to the WS via Sec-WebSocket-Protocol rather than a URL query
+  // string so it does not end up in access logs or Referer headers.
   const accessToken = useAuthStore((state) => state.accessToken);
 
-  // Build WebSocket URL with authentication token from auth store
-  const wsUrl = useMemo(() => {
-    // First try auth store (in-memory token), fallback to cookie reading
-    // for non-httpOnly scenarios
-    const getAccessToken = (): string | null => {
-      // Check auth store first (primary source for httpOnly cookie workaround)
-      if (accessToken) {
-        return accessToken;
-      }
-
-      // Fallback: try reading from cookies (won't work for httpOnly)
-      const cookies = document.cookie.split(";");
-      for (const cookie of cookies) {
-        const [name, value] = cookie.trim().split("=");
-        if (name === "access_token" && value) {
-          return decodeURIComponent(value);
-        }
-      }
-      return null;
-    };
-
-    const token = getAccessToken();
-    const baseUrl = `${WS_URL}/api/v1/ws/agent`;
-    return token ? `${baseUrl}?token=${token}` : baseUrl;
-  }, [accessToken]);
-
-  // Fetch access token on mount if not available
-  // This handles page refresh where token is cleared from memory
-  // but httpOnly cookie still exists
-  useEffect(() => {
-    const fetchTokenIfMissing = async () => {
-      if (!accessToken) {
-        try {
-          const response = await fetch("/api/auth/token");
-          if (response.ok) {
-            const data = await response.json();
-            useAuthStore.getState().setAccessToken(data.access_token);
-          }
-        } catch {
-          // Token fetch failed - user may not be logged in
-        }
-      }
-    };
-
-    fetchTokenIfMissing();
-  }, [accessToken]);
+  const wsUrl = `${WS_URL}/api/v1/ws/agent`;
+  const wsProtocols = useMemo(
+    () => (accessToken ? [`access_token.${accessToken}`, "chat"] : undefined),
+    [accessToken],
+  );
 
   const { isConnected, connect, disconnect, sendMessage } = useWebSocket({
     url: wsUrl,
+    protocols: wsProtocols,
     onMessage: handleWebSocketMessage,
   });
 

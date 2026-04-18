@@ -72,7 +72,9 @@ class AgentConnectionManager:
 
     async def connect(self, websocket: WebSocket) -> None:
         """Accept and store a new WebSocket connection."""
-        await websocket.accept()
+        # Echo back the application subprotocol chosen during auth (if any)
+        subprotocol = getattr(websocket.state, "accept_subprotocol", None)
+        await websocket.accept(subprotocol=subprotocol)
         self.active_connections.append(websocket)
         logger.info(f"Agent WebSocket connected. Total connections: {len(self.active_connections)}")
 
@@ -668,7 +670,9 @@ class AgentConnectionManager:
 
     async def connect(self, websocket: WebSocket) -> None:
         """Accept and store a new WebSocket connection."""
-        await websocket.accept()
+        # Echo back the application subprotocol chosen during auth (if any)
+        subprotocol = getattr(websocket.state, "accept_subprotocol", None)
+        await websocket.accept(subprotocol=subprotocol)
         self.active_connections.append(websocket)
         logger.info(f"Agent WebSocket connected. Total connections: {len(self.active_connections)}")
 
@@ -1156,7 +1160,9 @@ class AgentConnectionManager:
 
     async def connect(self, websocket: WebSocket) -> None:
         """Accept and store a new WebSocket connection."""
-        await websocket.accept()
+        # Echo back the application subprotocol chosen during auth (if any)
+        subprotocol = getattr(websocket.state, "accept_subprotocol", None)
+        await websocket.accept(subprotocol=subprotocol)
         self.active_connections.append(websocket)
         logger.info(f"Agent WebSocket connected. Total connections: {len(self.active_connections)}")
 
@@ -1646,7 +1652,9 @@ class AgentConnectionManager:
 
     async def connect(self, websocket: WebSocket) -> None:
         """Accept and store a new WebSocket connection."""
-        await websocket.accept()
+        # Echo back the application subprotocol chosen during auth (if any)
+        subprotocol = getattr(websocket.state, "accept_subprotocol", None)
+        await websocket.accept(subprotocol=subprotocol)
         self.active_connections.append(websocket)
         logger.info(f"Agent WebSocket connected. Total connections: {len(self.active_connections)}")
 
@@ -2145,7 +2153,9 @@ class AgentConnectionManager:
 
     async def connect(self, websocket: WebSocket) -> None:
         """Accept and store a new WebSocket connection."""
-        await websocket.accept()
+        # Echo back the application subprotocol chosen during auth (if any)
+        subprotocol = getattr(websocket.state, "accept_subprotocol", None)
+        await websocket.accept(subprotocol=subprotocol)
         self.active_connections.append(websocket)
         logger.info(f"Agent WebSocket connected. Total connections: {len(self.active_connections)}")
 
