@@ -68,7 +68,7 @@ class TestAssistantAgent:
 
     @patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"})
     @patch("app.agents.assistant.OpenAIProvider")
-    @patch("app.agents.assistant.OpenAIChatModel")
+    @patch("app.agents.assistant.OpenAIResponsesModel")
     def test_agent_property_creates_agent(self, mock_model, mock_provider):
         """Test agent property creates agent on first access."""
         agent = AssistantAgent()
@@ -78,7 +78,7 @@ class TestAssistantAgent:
 
     @patch.dict("os.environ", {"OPENAI_API_KEY": "test-key"})
     @patch("app.agents.assistant.OpenAIProvider")
-    @patch("app.agents.assistant.OpenAIChatModel")
+    @patch("app.agents.assistant.OpenAIResponsesModel")
     def test_agent_property_caches_agent(self, mock_model, mock_provider):
         """Test agent property caches the agent instance."""
         agent = AssistantAgent()
