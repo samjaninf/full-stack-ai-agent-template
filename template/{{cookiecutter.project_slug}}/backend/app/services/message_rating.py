@@ -2,12 +2,11 @@
 
 {%- if cookiecutter.use_postgresql %}
 import csv
-from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import StringIO
-
-from fastapi.responses import JSONResponse, StreamingResponse
-
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy.exc import IntegrityError
@@ -23,6 +22,13 @@ from app.schemas.message_rating import (
     RatingSummary,
     RatingValue,
 )
+
+
+@dataclass
+class RatingExportResult:
+    media_type: str
+    content_disposition: str
+    payload: dict[str, Any] | AsyncGenerator[str, None]
 
 
 class MessageRatingService:
@@ -334,31 +340,24 @@ class MessageRatingService:
     def _export_disposition(self, now: datetime, fmt: str) -> str:
         return f'attachment; filename="ratings_export_{now.strftime("%Y%m%d_%H%M%S")}.{fmt}"'
 
-    def _json_export_response(
+    def _build_json_payload(
         self, items: list[MessageRatingWithDetails], now: datetime
-    ) -> JSONResponse:
-        return JSONResponse(
-            content={
-                "ratings": [item.model_dump(mode="json") for item in items],
-                "total": len(items),
-                "exported_at": now.isoformat(),
-            },
-            headers={"Content-Disposition": self._export_disposition(now, "json")},
-        )
+    ) -> dict[str, Any]:
+        return {
+            "ratings": [item.model_dump(mode="json") for item in items],
+            "total": len(items),
+            "exported_at": now.isoformat(),
+        }
 
-    def _stream_csv_async(
-        self, chunks: AsyncIterable[list[MessageRatingWithDetails]], now: datetime
-    ) -> StreamingResponse:
-        async def generate() -> AsyncIterator[str]:
+    def _build_csv_rows(
+        self, chunks: AsyncIterable[list[MessageRatingWithDetails]]
+    ) -> AsyncGenerator[str, None]:
+        async def _generate() -> AsyncGenerator[str, None]:
             yield self._serialize_csv_row(self._CSV_HEADER)
             async for chunk in chunks:
                 for item in chunk:
                     yield self._serialize_csv_row(self._csv_row_values(item))
-        return StreamingResponse(
-            generate(),
-            media_type="text/csv",
-            headers={"Content-Disposition": self._export_disposition(now, "csv")},
-        )
+        return _generate()
 
     async def export_ratings(
         self,
@@ -366,30 +365,39 @@ class MessageRatingService:
         export_format: str,
         rating_filter: int | None = None,
         with_comments_only: bool = False,
-    ) -> JSONResponse | StreamingResponse:
+    ) -> RatingExportResult:
         fmt = self._validate_export_format(export_format)
         now = datetime.now(UTC)
+        disposition = self._export_disposition(now, fmt)
         chunks = self.export_all_ratings(
             rating_filter=rating_filter,
             with_comments_only=with_comments_only,
         )
         if fmt == "csv":
-            return self._stream_csv_async(chunks, now)
+            return RatingExportResult(
+                media_type="text/csv",
+                content_disposition=disposition,
+                payload=self._build_csv_rows(chunks),
+            )
         all_items: list[MessageRatingWithDetails] = []
         async for chunk in chunks:
             all_items.extend(chunk)
-        return self._json_export_response(all_items, now)
+        return RatingExportResult(
+            media_type="application/json",
+            content_disposition=disposition,
+            payload=self._build_json_payload(all_items, now),
+        )
 
 
 {%- elif cookiecutter.use_sqlite %}
 """Message rating service (SQLite sync)."""
 
 import csv
-from collections.abc import Generator, Iterable, Iterator
+from collections.abc import Generator, Iterable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import StringIO
-
-from fastapi.responses import JSONResponse, StreamingResponse
+from typing import Any
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -404,6 +412,13 @@ from app.schemas.message_rating import (
     RatingSummary,
     RatingValue,
 )
+
+
+@dataclass
+class RatingExportResult:
+    media_type: str
+    content_disposition: str
+    payload: dict[str, Any] | Generator[str, None, None]
 
 
 class MessageRatingService:
@@ -715,31 +730,24 @@ class MessageRatingService:
     def _export_disposition(self, now: datetime, fmt: str) -> str:
         return f'attachment; filename="ratings_export_{now.strftime("%Y%m%d_%H%M%S")}.{fmt}"'
 
-    def _json_export_response(
+    def _build_json_payload(
         self, items: list[MessageRatingWithDetails], now: datetime
-    ) -> JSONResponse:
-        return JSONResponse(
-            content={
-                "ratings": [item.model_dump(mode="json") for item in items],
-                "total": len(items),
-                "exported_at": now.isoformat(),
-            },
-            headers={"Content-Disposition": self._export_disposition(now, "json")},
-        )
+    ) -> dict[str, Any]:
+        return {
+            "ratings": [item.model_dump(mode="json") for item in items],
+            "total": len(items),
+            "exported_at": now.isoformat(),
+        }
 
-    def _stream_csv_sync(
-        self, chunks: Iterable[list[MessageRatingWithDetails]], now: datetime
-    ) -> StreamingResponse:
-        def generate() -> Iterator[str]:
+    def _build_csv_rows(
+        self, chunks: Iterable[list[MessageRatingWithDetails]]
+    ) -> Generator[str, None, None]:
+        def _generate() -> Generator[str, None, None]:
             yield self._serialize_csv_row(self._CSV_HEADER)
             for chunk in chunks:
                 for item in chunk:
                     yield self._serialize_csv_row(self._csv_row_values(item))
-        return StreamingResponse(
-            generate(),
-            media_type="text/csv",
-            headers={"Content-Disposition": self._export_disposition(now, "csv")},
-        )
+        return _generate()
 
     def export_ratings(
         self,
@@ -747,30 +755,39 @@ class MessageRatingService:
         export_format: str,
         rating_filter: int | None = None,
         with_comments_only: bool = False,
-    ) -> JSONResponse | StreamingResponse:
+    ) -> RatingExportResult:
         fmt = self._validate_export_format(export_format)
         now = datetime.now(UTC)
+        disposition = self._export_disposition(now, fmt)
         chunks = self.export_all_ratings(
             rating_filter=rating_filter,
             with_comments_only=with_comments_only,
         )
         if fmt == "csv":
-            return self._stream_csv_sync(chunks, now)
+            return RatingExportResult(
+                media_type="text/csv",
+                content_disposition=disposition,
+                payload=self._build_csv_rows(chunks),
+            )
         all_items: list[MessageRatingWithDetails] = []
         for chunk in chunks:
             all_items.extend(chunk)
-        return self._json_export_response(all_items, now)
+        return RatingExportResult(
+            media_type="application/json",
+            content_disposition=disposition,
+            payload=self._build_json_payload(all_items, now),
+        )
 
 
 {%- elif cookiecutter.use_mongodb %}
 """Message rating service (MongoDB async)."""
 
 import csv
-from collections.abc import AsyncGenerator, AsyncIterable, AsyncIterator
+from collections.abc import AsyncGenerator, AsyncIterable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from io import StringIO
-
-from fastapi.responses import JSONResponse, StreamingResponse
+from typing import Any
 
 from app.core.exceptions import NotFoundError, ValidationError
 from app.db.models.conversation import Message
@@ -782,6 +799,13 @@ from app.schemas.message_rating import (
     RatingSummary,
     RatingValue,
 )
+
+
+@dataclass
+class RatingExportResult:
+    media_type: str
+    content_disposition: str
+    payload: dict[str, Any] | AsyncGenerator[str, None]
 
 
 class MessageRatingService:
@@ -1117,31 +1141,24 @@ class MessageRatingService:
     def _export_disposition(self, now: datetime, fmt: str) -> str:
         return f'attachment; filename="ratings_export_{now.strftime("%Y%m%d_%H%M%S")}.{fmt}"'
 
-    def _json_export_response(
+    def _build_json_payload(
         self, items: list[MessageRatingWithDetails], now: datetime
-    ) -> JSONResponse:
-        return JSONResponse(
-            content={
-                "ratings": [item.model_dump(mode="json") for item in items],
-                "total": len(items),
-                "exported_at": now.isoformat(),
-            },
-            headers={"Content-Disposition": self._export_disposition(now, "json")},
-        )
+    ) -> dict[str, Any]:
+        return {
+            "ratings": [item.model_dump(mode="json") for item in items],
+            "total": len(items),
+            "exported_at": now.isoformat(),
+        }
 
-    def _stream_csv_async(
-        self, chunks: AsyncIterable[list[MessageRatingWithDetails]], now: datetime
-    ) -> StreamingResponse:
-        async def generate() -> AsyncIterator[str]:
+    def _build_csv_rows(
+        self, chunks: AsyncIterable[list[MessageRatingWithDetails]]
+    ) -> AsyncGenerator[str, None]:
+        async def _generate() -> AsyncGenerator[str, None]:
             yield self._serialize_csv_row(self._CSV_HEADER)
             async for chunk in chunks:
                 for item in chunk:
                     yield self._serialize_csv_row(self._csv_row_values(item))
-        return StreamingResponse(
-            generate(),
-            media_type="text/csv",
-            headers={"Content-Disposition": self._export_disposition(now, "csv")},
-        )
+        return _generate()
 
     async def export_ratings(
         self,
@@ -1149,19 +1166,28 @@ class MessageRatingService:
         export_format: str,
         rating_filter: int | None = None,
         with_comments_only: bool = False,
-    ) -> JSONResponse | StreamingResponse:
+    ) -> RatingExportResult:
         fmt = self._validate_export_format(export_format)
         now = datetime.now(UTC)
+        disposition = self._export_disposition(now, fmt)
         chunks = self.export_all_ratings(
             rating_filter=rating_filter,
             with_comments_only=with_comments_only,
         )
         if fmt == "csv":
-            return self._stream_csv_async(chunks, now)
+            return RatingExportResult(
+                media_type="text/csv",
+                content_disposition=disposition,
+                payload=self._build_csv_rows(chunks),
+            )
         all_items: list[MessageRatingWithDetails] = []
         async for chunk in chunks:
             all_items.extend(chunk)
-        return self._json_export_response(all_items, now)
+        return RatingExportResult(
+            media_type="application/json",
+            content_disposition=disposition,
+            payload=self._build_json_payload(all_items, now),
+        )
 
 
 {%- endif %}

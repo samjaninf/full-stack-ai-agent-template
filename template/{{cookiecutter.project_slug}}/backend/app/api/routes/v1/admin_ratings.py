@@ -13,6 +13,7 @@ The endpoints are:
 from typing import Any
 
 from fastapi import APIRouter, Query
+from fastapi.responses import JSONResponse, StreamingResponse
 
 from app.api.deps import CurrentAdmin, MessageRatingSvc
 from app.schemas.message_rating import MessageRatingList, RatingSummary
@@ -80,10 +81,20 @@ async def export_ratings(
 
     CSV is streamed row-by-row; JSON collects into a single document.
     """
-    return await rating_service.export_ratings(
+    result = await rating_service.export_ratings(
         export_format=export_format,
         rating_filter=rating_filter,
         with_comments_only=with_comments_only,
+    )
+    if result.media_type == "text/csv":
+        return StreamingResponse(
+            result.payload,
+            media_type="text/csv",
+            headers={"Content-Disposition": result.content_disposition},
+        )
+    return JSONResponse(
+        content=result.payload,
+        headers={"Content-Disposition": result.content_disposition},
     )
 
 
@@ -148,10 +159,20 @@ def export_ratings(
 
     CSV is streamed row-by-row; JSON collects into a single document.
     """
-    return rating_service.export_ratings(
+    result = rating_service.export_ratings(
         export_format=export_format,
         rating_filter=rating_filter,
         with_comments_only=with_comments_only,
+    )
+    if result.media_type == "text/csv":
+        return StreamingResponse(
+            result.payload,
+            media_type="text/csv",
+            headers={"Content-Disposition": result.content_disposition},
+        )
+    return JSONResponse(
+        content=result.payload,
+        headers={"Content-Disposition": result.content_disposition},
     )
 
 
@@ -216,10 +237,20 @@ async def export_ratings(
 
     CSV is streamed row-by-row; JSON collects into a single document.
     """
-    return await rating_service.export_ratings(
+    result = await rating_service.export_ratings(
         export_format=export_format,
         rating_filter=rating_filter,
         with_comments_only=with_comments_only,
+    )
+    if result.media_type == "text/csv":
+        return StreamingResponse(
+            result.payload,
+            media_type="text/csv",
+            headers={"Content-Disposition": result.content_disposition},
+        )
+    return JSONResponse(
+        content=result.payload,
+        headers={"Content-Disposition": result.content_disposition},
     )
 
 
