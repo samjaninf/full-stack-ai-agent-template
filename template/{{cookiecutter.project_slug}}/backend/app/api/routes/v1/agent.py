@@ -64,6 +64,83 @@ async def list_models() -> dict[str, Any]:
 
 manager = AgentConnectionManager()
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+
+
+async def _resolve_kb_collections(conversation_id: str, user_id: str | None) -> list[str]:
+    """Return active KB collection names for a conversation — always resolved server-side."""
+    try:
+{%- if cookiecutter.use_postgresql %}
+        from uuid import UUID as _UUID
+        from app.db.session import get_db_context as _db_ctx
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        async with _db_ctx() as _db:
+            _conv = await _c_repo.get_conversation_by_id(_db, _UUID(conversation_id))
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _active: list[str] = _conv.active_knowledge_base_ids or []
+            if not _active:
+                if _org_id:
+                    _dflt = await _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = await _kb_repo.get_accessible(
+                _db,
+                user_id=_UUID(user_id) if user_id else None,
+                organization_id=_org_id,
+            )
+            _active_set = {str(i) for i in _active}
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_sqlite %}
+        import json as _json
+        from contextlib import contextmanager as _cm
+        from app.db.session import get_db_session as _db_sess
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        with _cm(_db_sess)() as _db:
+            _conv = _c_repo.get_conversation_by_id(_db, conversation_id)
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _raw = _conv.active_knowledge_base_ids
+            _active = _json.loads(_raw) if isinstance(_raw, str) else list(_raw or [])
+            if not _active:
+                if _org_id:
+                    _dflt = _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = _kb_repo.get_accessible(_db, user_id=user_id, organization_id=_org_id)
+            _active_set = set(_active)
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_mongodb %}
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        _conv = await _c_repo.get_conversation_by_id(conversation_id)
+        if not _conv:
+            return []
+        _org_id = getattr(_conv, "organization_id", None)
+        _active: list[str] = _conv.active_knowledge_base_ids or []
+        if not _active:
+            if _org_id:
+                _dflt = await _kb_repo.get_default_for_org(_org_id)
+                if _dflt:
+                    return [_dflt.collection_name]
+            return []
+        _accessible = await _kb_repo.get_accessible(user_id=user_id, organization_id=_org_id)
+        _active_set = set(_active)
+        return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- else %}
+        return []
+{%- endif %}
+    except Exception as _e:
+        logger.warning("KB collection resolution failed: %s", _e)
+        return []
+{%- endif %}
+
 
 def build_message_history(history: list[dict[str, str]]) -> list[ModelRequest | ModelResponse]:
     """Convert conversation history to PydanticAI message format."""
@@ -294,7 +371,7 @@ async def agent_websocket(
 
             try:
                 selected_model = data.get("model")
-                assistant = get_agent(model_name=selected_model)
+                assistant = get_agent(model_name=selected_model, thinking_effort=data.get("thinking_effort"))
                 model_history = build_message_history(conversation_history)
 
                 # Collect tool calls during streaming for persistence
@@ -341,6 +418,17 @@ async def agent_websocket(
                         user_input = user_message + "".join(file_context_parts)
 {%- else %}
                 user_input = user_message
+{%- endif %}
+
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+                deps.kb_collection_names = await _resolve_kb_collections(
+                    current_conversation_id or "",
+{%- if cookiecutter.websocket_auth_jwt %}
+                    str(user.id) if user else None,
+{%- else %}
+                    None,
+{%- endif %}
+                ) if current_conversation_id else []
 {%- endif %}
 
                 # Use iter() on the underlying PydanticAI agent to stream all events
@@ -618,6 +706,83 @@ async def list_models() -> dict[str, Any]:
 
 manager = AgentConnectionManager()
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+
+
+async def _resolve_kb_collections(conversation_id: str, user_id: str | None) -> list[str]:
+    """Return active KB collection names for a conversation — always resolved server-side."""
+    try:
+{%- if cookiecutter.use_postgresql %}
+        from uuid import UUID as _UUID
+        from app.db.session import get_db_context as _db_ctx
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        async with _db_ctx() as _db:
+            _conv = await _c_repo.get_conversation_by_id(_db, _UUID(conversation_id))
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _active: list[str] = _conv.active_knowledge_base_ids or []
+            if not _active:
+                if _org_id:
+                    _dflt = await _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = await _kb_repo.get_accessible(
+                _db,
+                user_id=_UUID(user_id) if user_id else None,
+                organization_id=_org_id,
+            )
+            _active_set = {str(i) for i in _active}
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_sqlite %}
+        import json as _json
+        from contextlib import contextmanager as _cm
+        from app.db.session import get_db_session as _db_sess
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        with _cm(_db_sess)() as _db:
+            _conv = _c_repo.get_conversation_by_id(_db, conversation_id)
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _raw = _conv.active_knowledge_base_ids
+            _active = _json.loads(_raw) if isinstance(_raw, str) else list(_raw or [])
+            if not _active:
+                if _org_id:
+                    _dflt = _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = _kb_repo.get_accessible(_db, user_id=user_id, organization_id=_org_id)
+            _active_set = set(_active)
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_mongodb %}
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        _conv = await _c_repo.get_conversation_by_id(conversation_id)
+        if not _conv:
+            return []
+        _org_id = getattr(_conv, "organization_id", None)
+        _active: list[str] = _conv.active_knowledge_base_ids or []
+        if not _active:
+            if _org_id:
+                _dflt = await _kb_repo.get_default_for_org(_org_id)
+                if _dflt:
+                    return [_dflt.collection_name]
+            return []
+        _accessible = await _kb_repo.get_accessible(user_id=user_id, organization_id=_org_id)
+        _active_set = set(_active)
+        return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- else %}
+        return []
+{%- endif %}
+    except Exception as _e:
+        logger.warning("KB collection resolution failed: %s", _e)
+        return []
+{%- endif %}
+
 
 def build_message_history(
     history: list[dict[str, str]]
@@ -852,13 +1017,26 @@ async def agent_websocket(
 
             try:
                 selected_model = data.get("model")
-                assistant = get_agent(model_name=selected_model)
+                assistant = get_agent(model_name=selected_model, thinking_effort=data.get("thinking_effort"))
                 model_history = build_message_history(conversation_history)
                 model_history.append(HumanMessage(content=user_message))
 
                 final_output = ""
                 tool_events: list[Any] = []
                 seen_tool_call_ids: set[str] = set()
+
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+                from app.agents.tools.rag_tool import _active_kb_collections
+                _kb_names: list[str] = await _resolve_kb_collections(
+                    current_conversation_id or "",
+{%- if cookiecutter.websocket_auth_jwt %}
+                    str(user.id) if user else None,
+{%- else %}
+                    None,
+{%- endif %}
+                ) if current_conversation_id else []
+                _kb_token = _active_kb_collections.set(_kb_names)
+{%- endif %}
 
                 await manager.send_event(websocket, "model_request_start", {})
 
@@ -1077,6 +1255,83 @@ async def list_models() -> dict[str, Any]:
 
 
 manager = AgentConnectionManager()
+
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+
+
+async def _resolve_kb_collections(conversation_id: str, user_id: str | None) -> list[str]:
+    """Return active KB collection names for a conversation — always resolved server-side."""
+    try:
+{%- if cookiecutter.use_postgresql %}
+        from uuid import UUID as _UUID
+        from app.db.session import get_db_context as _db_ctx
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        async with _db_ctx() as _db:
+            _conv = await _c_repo.get_conversation_by_id(_db, _UUID(conversation_id))
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _active: list[str] = _conv.active_knowledge_base_ids or []
+            if not _active:
+                if _org_id:
+                    _dflt = await _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = await _kb_repo.get_accessible(
+                _db,
+                user_id=_UUID(user_id) if user_id else None,
+                organization_id=_org_id,
+            )
+            _active_set = {str(i) for i in _active}
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_sqlite %}
+        import json as _json
+        from contextlib import contextmanager as _cm
+        from app.db.session import get_db_session as _db_sess
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        with _cm(_db_sess)() as _db:
+            _conv = _c_repo.get_conversation_by_id(_db, conversation_id)
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _raw = _conv.active_knowledge_base_ids
+            _active = _json.loads(_raw) if isinstance(_raw, str) else list(_raw or [])
+            if not _active:
+                if _org_id:
+                    _dflt = _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = _kb_repo.get_accessible(_db, user_id=user_id, organization_id=_org_id)
+            _active_set = set(_active)
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_mongodb %}
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        _conv = await _c_repo.get_conversation_by_id(conversation_id)
+        if not _conv:
+            return []
+        _org_id = getattr(_conv, "organization_id", None)
+        _active: list[str] = _conv.active_knowledge_base_ids or []
+        if not _active:
+            if _org_id:
+                _dflt = await _kb_repo.get_default_for_org(_org_id)
+                if _dflt:
+                    return [_dflt.collection_name]
+            return []
+        _accessible = await _kb_repo.get_accessible(user_id=user_id, organization_id=_org_id)
+        _active_set = set(_active)
+        return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- else %}
+        return []
+{%- endif %}
+    except Exception as _e:
+        logger.warning("KB collection resolution failed: %s", _e)
+        return []
+{%- endif %}
 
 
 def build_message_history(
@@ -1313,11 +1568,24 @@ async def agent_websocket(
 
             try:
                 selected_model = data.get("model")
-                assistant = get_agent(model_name=selected_model)
+                assistant = get_agent(model_name=selected_model, thinking_effort=data.get("thinking_effort"))
 
                 final_output = ""
                 tool_events: list[Any] = []
                 seen_tool_call_ids: set[str] = set()
+
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+                from app.agents.tools.rag_tool import _active_kb_collections
+                _kb_names: list[str] = await _resolve_kb_collections(
+                    current_conversation_id or "",
+{%- if cookiecutter.websocket_auth_jwt %}
+                    str(user.id) if user else None,
+{%- else %}
+                    None,
+{%- endif %}
+                ) if current_conversation_id else []
+                _active_kb_collections.set(_kb_names)
+{%- endif %}
 
                 await manager.send_event(websocket, "model_request_start", {})
 
@@ -1540,6 +1808,83 @@ async def list_models() -> dict[str, Any]:
 
 manager = AgentConnectionManager()
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+
+
+async def _resolve_kb_collections(conversation_id: str, user_id: str | None) -> list[str]:
+    """Return active KB collection names for a conversation — always resolved server-side."""
+    try:
+{%- if cookiecutter.use_postgresql %}
+        from uuid import UUID as _UUID
+        from app.db.session import get_db_context as _db_ctx
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        async with _db_ctx() as _db:
+            _conv = await _c_repo.get_conversation_by_id(_db, _UUID(conversation_id))
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _active: list[str] = _conv.active_knowledge_base_ids or []
+            if not _active:
+                if _org_id:
+                    _dflt = await _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = await _kb_repo.get_accessible(
+                _db,
+                user_id=_UUID(user_id) if user_id else None,
+                organization_id=_org_id,
+            )
+            _active_set = {str(i) for i in _active}
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_sqlite %}
+        import json as _json
+        from contextlib import contextmanager as _cm
+        from app.db.session import get_db_session as _db_sess
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        with _cm(_db_sess)() as _db:
+            _conv = _c_repo.get_conversation_by_id(_db, conversation_id)
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _raw = _conv.active_knowledge_base_ids
+            _active = _json.loads(_raw) if isinstance(_raw, str) else list(_raw or [])
+            if not _active:
+                if _org_id:
+                    _dflt = _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = _kb_repo.get_accessible(_db, user_id=user_id, organization_id=_org_id)
+            _active_set = set(_active)
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_mongodb %}
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        _conv = await _c_repo.get_conversation_by_id(conversation_id)
+        if not _conv:
+            return []
+        _org_id = getattr(_conv, "organization_id", None)
+        _active: list[str] = _conv.active_knowledge_base_ids or []
+        if not _active:
+            if _org_id:
+                _dflt = await _kb_repo.get_default_for_org(_org_id)
+                if _dflt:
+                    return [_dflt.collection_name]
+            return []
+        _accessible = await _kb_repo.get_accessible(user_id=user_id, organization_id=_org_id)
+        _active_set = set(_active)
+        return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- else %}
+        return []
+{%- endif %}
+    except Exception as _e:
+        logger.warning("KB collection resolution failed: %s", _e)
+        return []
+{%- endif %}
+
 {%- if cookiecutter.websocket_auth_api_key %}
 
 
@@ -1760,6 +2105,19 @@ async def agent_websocket(
                 crew_assistant = get_crew()
 
                 final_output = ""
+
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+                from app.agents.tools.rag_tool import _active_kb_collections
+                _kb_names: list[str] = await _resolve_kb_collections(
+                    current_conversation_id or "",
+{%- if cookiecutter.websocket_auth_jwt %}
+                    str(user.id) if user else None,
+{%- else %}
+                    None,
+{%- endif %}
+                ) if current_conversation_id else []
+                _active_kb_collections.set(_kb_names)
+{%- endif %}
 
                 await manager.send_event(websocket, "crew_start", {
                     "crew_name": crew_assistant.config.name,
@@ -2010,6 +2368,83 @@ async def list_models() -> dict[str, Any]:
 
 
 manager = AgentConnectionManager()
+
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+
+
+async def _resolve_kb_collections(conversation_id: str, user_id: str | None) -> list[str]:
+    """Return active KB collection names for a conversation — always resolved server-side."""
+    try:
+{%- if cookiecutter.use_postgresql %}
+        from uuid import UUID as _UUID
+        from app.db.session import get_db_context as _db_ctx
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        async with _db_ctx() as _db:
+            _conv = await _c_repo.get_conversation_by_id(_db, _UUID(conversation_id))
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _active: list[str] = _conv.active_knowledge_base_ids or []
+            if not _active:
+                if _org_id:
+                    _dflt = await _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = await _kb_repo.get_accessible(
+                _db,
+                user_id=_UUID(user_id) if user_id else None,
+                organization_id=_org_id,
+            )
+            _active_set = {str(i) for i in _active}
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_sqlite %}
+        import json as _json
+        from contextlib import contextmanager as _cm
+        from app.db.session import get_db_session as _db_sess
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        with _cm(_db_sess)() as _db:
+            _conv = _c_repo.get_conversation_by_id(_db, conversation_id)
+            if not _conv:
+                return []
+            _org_id = getattr(_conv, "organization_id", None)
+            _raw = _conv.active_knowledge_base_ids
+            _active = _json.loads(_raw) if isinstance(_raw, str) else list(_raw or [])
+            if not _active:
+                if _org_id:
+                    _dflt = _kb_repo.get_default_for_org(_db, _org_id)
+                    if _dflt:
+                        return [_dflt.collection_name]
+                return []
+            _accessible = _kb_repo.get_accessible(_db, user_id=user_id, organization_id=_org_id)
+            _active_set = set(_active)
+            return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- elif cookiecutter.use_mongodb %}
+        from app.repositories import conversation_repo as _c_repo
+        from app.repositories import knowledge_base_repo as _kb_repo
+        _conv = await _c_repo.get_conversation_by_id(conversation_id)
+        if not _conv:
+            return []
+        _org_id = getattr(_conv, "organization_id", None)
+        _active: list[str] = _conv.active_knowledge_base_ids or []
+        if not _active:
+            if _org_id:
+                _dflt = await _kb_repo.get_default_for_org(_org_id)
+                if _dflt:
+                    return [_dflt.collection_name]
+            return []
+        _accessible = await _kb_repo.get_accessible(user_id=user_id, organization_id=_org_id)
+        _active_set = set(_active)
+        return [_kb.collection_name for _kb in _accessible if str(_kb.id) in _active_set]
+{%- else %}
+        return []
+{%- endif %}
+    except Exception as _e:
+        logger.warning("KB collection resolution failed: %s", _e)
+        return []
+{%- endif %}
 
 
 def build_message_history(
@@ -2390,6 +2825,19 @@ async def agent_websocket(
 
                     if file_refs:
                         agent_input = user_message + "\n\nAttached files:\n" + "\n".join(file_refs)
+{%- endif %}
+
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+                from app.agents.tools.rag_tool import _active_kb_collections
+                _kb_names: list[str] = await _resolve_kb_collections(
+                    current_conversation_id or "",
+{%- if cookiecutter.websocket_auth_jwt %}
+                    str(user.id) if user else None,
+{%- else %}
+                    None,
+{%- endif %}
+                ) if current_conversation_id else []
+                _active_kb_collections.set(_kb_names)
 {%- endif %}
 
                 await manager.send_event(websocket, "model_request_start", {})

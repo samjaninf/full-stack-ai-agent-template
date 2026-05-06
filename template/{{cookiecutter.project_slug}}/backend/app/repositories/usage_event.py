@@ -3,8 +3,9 @@
 
 {%- if cookiecutter.use_postgresql %}
 import uuid
+from datetime import datetime
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, func
+from sqlalchemy import delete as sql_delete, select, func, text
 from app.db.models.credit_transaction import UsageEvent
 
 
@@ -64,26 +65,96 @@ async def aggregate_for_org(
     db: AsyncSession,
     organization_id: uuid.UUID,
 ) -> dict:
-    """Return total tokens and credits for dashboard."""
-    q = select(
+    """Return total tokens, credits, and per-model breakdown."""
+    total_q = select(
         func.sum(UsageEvent.input_tokens).label("total_input"),
         func.sum(UsageEvent.output_tokens).label("total_output"),
         func.sum(UsageEvent.cached_tokens).label("total_cached"),
         func.sum(UsageEvent.credits_charged).label("total_credits"),
         func.count().label("total_calls"),
     ).where(UsageEvent.organization_id == organization_id)
-    row = (await db.execute(q)).one()
+    row = (await db.execute(total_q)).one()
+
+    by_model_q = (
+        select(
+            UsageEvent.model,
+            UsageEvent.provider,
+            func.sum(UsageEvent.input_tokens).label("input_tokens"),
+            func.sum(UsageEvent.output_tokens).label("output_tokens"),
+            func.sum(UsageEvent.cached_tokens).label("cached_tokens"),
+            func.sum(UsageEvent.credits_charged).label("credits_charged"),
+            func.count().label("total_calls"),
+        )
+        .where(UsageEvent.organization_id == organization_id)
+        .group_by(UsageEvent.model, UsageEvent.provider)
+        .order_by(func.sum(UsageEvent.credits_charged).desc())
+    )
+    by_model_rows = (await db.execute(by_model_q)).all()
+
     return {
         "total_input_tokens": row.total_input or 0,
         "total_output_tokens": row.total_output or 0,
         "total_cached_tokens": row.total_cached or 0,
         "total_credits_charged": row.total_credits or 0,
         "total_calls": row.total_calls or 0,
+        "by_model": [
+            {
+                "model": r.model,
+                "provider": r.provider,
+                "input_tokens": r.input_tokens or 0,
+                "output_tokens": r.output_tokens or 0,
+                "cached_tokens": r.cached_tokens or 0,
+                "credits_charged": r.credits_charged or 0,
+                "total_calls": r.total_calls or 0,
+            }
+            for r in by_model_rows
+        ],
     }
 
+
+async def daily_timeline(
+    db: AsyncSession,
+    organization_id: uuid.UUID,
+    *,
+    days: int = 30,
+) -> list[dict]:
+    """Return daily usage buckets from the mv_usage_daily materialized view."""
+    q = text("""
+        SELECT day::text, input_tokens, output_tokens, cached_tokens, credits_charged, total_calls
+        FROM mv_usage_daily
+        WHERE organization_id = :org_id
+          AND day >= CURRENT_DATE - INTERVAL '1 day' * :days
+        ORDER BY day ASC
+    """)
+    rows = (await db.execute(q, {"org_id": str(organization_id), "days": days})).all()
+    return [
+        {
+            "day": row.day,
+            "input_tokens": row.input_tokens or 0,
+            "output_tokens": row.output_tokens or 0,
+            "cached_tokens": row.cached_tokens or 0,
+            "credits_charged": row.credits_charged or 0,
+            "total_calls": row.total_calls or 0,
+        }
+        for row in rows
+    ]
+
+
+async def delete_older_than(
+    db: AsyncSession,
+    cutoff: datetime,
+) -> int:
+    """Delete usage events older than cutoff. Returns number of deleted rows."""
+    result = await db.execute(
+        sql_delete(UsageEvent).where(UsageEvent.created_at < cutoff)
+    )
+    await db.flush()
+    return result.rowcount
+
 {%- elif cookiecutter.use_sqlite %}
+from datetime import datetime
 from sqlalchemy.orm import Session
-from sqlalchemy import select, func
+from sqlalchemy import delete as sql_delete, select, func
 from app.db.models.credit_transaction import UsageEvent
 
 
@@ -142,23 +213,103 @@ def list_for_org(
 
 
 def aggregate_for_org(db: Session, organization_id: str) -> dict:
-    q = select(
+    """Return total tokens, credits, and per-model breakdown."""
+    total_q = select(
         func.sum(UsageEvent.input_tokens).label("total_input"),
         func.sum(UsageEvent.output_tokens).label("total_output"),
         func.sum(UsageEvent.cached_tokens).label("total_cached"),
         func.sum(UsageEvent.credits_charged).label("total_credits"),
         func.count().label("total_calls"),
     ).where(UsageEvent.organization_id == organization_id)
-    row = db.execute(q).one()
+    row = db.execute(total_q).one()
+
+    by_model_q = (
+        select(
+            UsageEvent.model,
+            UsageEvent.provider,
+            func.sum(UsageEvent.input_tokens).label("input_tokens"),
+            func.sum(UsageEvent.output_tokens).label("output_tokens"),
+            func.sum(UsageEvent.cached_tokens).label("cached_tokens"),
+            func.sum(UsageEvent.credits_charged).label("credits_charged"),
+            func.count().label("total_calls"),
+        )
+        .where(UsageEvent.organization_id == organization_id)
+        .group_by(UsageEvent.model, UsageEvent.provider)
+        .order_by(func.sum(UsageEvent.credits_charged).desc())
+    )
+    by_model_rows = db.execute(by_model_q).all()
+
     return {
         "total_input_tokens": row.total_input or 0,
         "total_output_tokens": row.total_output or 0,
         "total_cached_tokens": row.total_cached or 0,
         "total_credits_charged": row.total_credits or 0,
         "total_calls": row.total_calls or 0,
+        "by_model": [
+            {
+                "model": r.model,
+                "provider": r.provider,
+                "input_tokens": r.input_tokens or 0,
+                "output_tokens": r.output_tokens or 0,
+                "cached_tokens": r.cached_tokens or 0,
+                "credits_charged": r.credits_charged or 0,
+                "total_calls": r.total_calls or 0,
+            }
+            for r in by_model_rows
+        ],
     }
 
+
+def daily_timeline(
+    db: Session,
+    organization_id: str,
+    *,
+    days: int = 30,
+) -> list[dict]:
+    """Return daily usage buckets using a live GROUP BY query."""
+    from datetime import timezone, timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    q = (
+        select(
+            func.date(UsageEvent.created_at).label("day"),
+            func.sum(UsageEvent.input_tokens).label("input_tokens"),
+            func.sum(UsageEvent.output_tokens).label("output_tokens"),
+            func.sum(UsageEvent.cached_tokens).label("cached_tokens"),
+            func.sum(UsageEvent.credits_charged).label("credits_charged"),
+            func.count().label("total_calls"),
+        )
+        .where(
+            UsageEvent.organization_id == organization_id,
+            UsageEvent.created_at >= cutoff,
+        )
+        .group_by(func.date(UsageEvent.created_at))
+        .order_by(func.date(UsageEvent.created_at).asc())
+    )
+    rows = db.execute(q).all()
+    return [
+        {
+            "day": str(r.day),
+            "input_tokens": r.input_tokens or 0,
+            "output_tokens": r.output_tokens or 0,
+            "cached_tokens": r.cached_tokens or 0,
+            "credits_charged": r.credits_charged or 0,
+            "total_calls": r.total_calls or 0,
+        }
+        for r in rows
+    ]
+
+
+def delete_older_than(
+    db: Session,
+    cutoff: datetime,
+) -> int:
+    """Delete usage events older than cutoff. Returns number of deleted rows."""
+    result = db.execute(sql_delete(UsageEvent).where(UsageEvent.created_at < cutoff))
+    db.flush()
+    return result.rowcount
+
 {%- elif cookiecutter.use_mongodb %}
+from datetime import datetime
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.models.credit_transaction import UsageEvent
 
@@ -204,6 +355,119 @@ async def list_for_org(
     total = await query.count()
     rows = await query.sort("-created_at").skip(skip).limit(limit).to_list()
     return rows, total
+
+
+async def aggregate_for_org(
+    db: AsyncIOMotorDatabase,
+    organization_id: str,
+) -> dict:
+    """Return total tokens, credits, and per-model breakdown."""
+    totals_pipeline = [
+        {"$match": {"organization_id": organization_id}},
+        {
+            "$group": {
+                "_id": None,
+                "total_input": {"$sum": "$input_tokens"},
+                "total_output": {"$sum": "$output_tokens"},
+                "total_cached": {"$sum": "$cached_tokens"},
+                "total_credits": {"$sum": "$credits_charged"},
+                "total_calls": {"$sum": 1},
+            }
+        },
+    ]
+    totals_result = await UsageEvent.aggregate(totals_pipeline).to_list()
+    totals = totals_result[0] if totals_result else {}
+
+    by_model_pipeline = [
+        {"$match": {"organization_id": organization_id}},
+        {
+            "$group": {
+                "_id": {"model": "$model", "provider": "$provider"},
+                "input_tokens": {"$sum": "$input_tokens"},
+                "output_tokens": {"$sum": "$output_tokens"},
+                "cached_tokens": {"$sum": "$cached_tokens"},
+                "credits_charged": {"$sum": "$credits_charged"},
+                "total_calls": {"$sum": 1},
+            }
+        },
+        {"$sort": {"credits_charged": -1}},
+    ]
+    by_model_rows = await UsageEvent.aggregate(by_model_pipeline).to_list()
+
+    return {
+        "total_input_tokens": totals.get("total_input", 0),
+        "total_output_tokens": totals.get("total_output", 0),
+        "total_cached_tokens": totals.get("total_cached", 0),
+        "total_credits_charged": totals.get("total_credits", 0),
+        "total_calls": totals.get("total_calls", 0),
+        "by_model": [
+            {
+                "model": r["_id"]["model"],
+                "provider": r["_id"]["provider"],
+                "input_tokens": r.get("input_tokens", 0),
+                "output_tokens": r.get("output_tokens", 0),
+                "cached_tokens": r.get("cached_tokens", 0),
+                "credits_charged": r.get("credits_charged", 0),
+                "total_calls": r.get("total_calls", 0),
+            }
+            for r in by_model_rows
+        ],
+    }
+
+
+async def daily_timeline(
+    db: AsyncIOMotorDatabase,
+    organization_id: str,
+    *,
+    days: int = 30,
+) -> list[dict]:
+    """Return daily usage buckets via MongoDB aggregation pipeline."""
+    from datetime import timezone, timedelta
+    cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+    pipeline = [
+        {"$match": {
+            "organization_id": organization_id,
+            "created_at": {"$gte": cutoff},
+        }},
+        {
+            "$group": {
+                "_id": {
+                    "$dateToString": {
+                        "format": "%Y-%m-%d",
+                        "date": "$created_at",
+                        "timezone": "UTC",
+                    }
+                },
+                "input_tokens": {"$sum": "$input_tokens"},
+                "output_tokens": {"$sum": "$output_tokens"},
+                "cached_tokens": {"$sum": "$cached_tokens"},
+                "credits_charged": {"$sum": "$credits_charged"},
+                "total_calls": {"$sum": 1},
+            }
+        },
+        {"$sort": {"_id": 1}},
+    ]
+    rows = await UsageEvent.aggregate(pipeline).to_list()
+    return [
+        {
+            "day": r["_id"],
+            "input_tokens": r.get("input_tokens", 0),
+            "output_tokens": r.get("output_tokens", 0),
+            "cached_tokens": r.get("cached_tokens", 0),
+            "credits_charged": r.get("credits_charged", 0),
+            "total_calls": r.get("total_calls", 0),
+        }
+        for r in rows
+    ]
+
+
+async def delete_older_than(
+    db: AsyncIOMotorDatabase,
+    cutoff: datetime,
+) -> int:
+    """Delete usage events older than cutoff. Returns number of deleted documents."""
+    result = await UsageEvent.find(UsageEvent.created_at < cutoff).delete()
+    return result.deleted_count if result else 0
 
 {%- endif %}
 {%- else %}

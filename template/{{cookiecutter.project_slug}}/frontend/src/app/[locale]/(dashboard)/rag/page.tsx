@@ -23,6 +23,7 @@ import {
   type RAGCollectionInfo, type RAGTrackedDocument, type RAGSearchResult, type RAGSyncLog,
   type SyncSourceRead, type SyncSourceCreate, type ConnectorInfo,
 } from "@/lib/rag-api";
+import { apiClient } from "@/lib/api-client";
 {% endraw %}
 {%- if (cookiecutter.use_celery or cookiecutter.use_taskiq or cookiecutter.use_arq) and cookiecutter.enable_redis %}
 import { BACKEND_URL } from "@/lib/constants";
@@ -196,8 +197,7 @@ export default function RAGPage() {
 
   useEffect(() => {
     fetchCollections();
-    fetch("/api/v1/rag/supported-formats", { credentials: "include" })
-      .then(r => r.ok ? r.json() : null)
+    apiClient.get<{ formats: string[] }>("/rag/supported-formats")
       .then(data => { if (data?.formats) setSupportedFormats(data.formats); })
       .catch(() => {});
   }, [fetchCollections]);

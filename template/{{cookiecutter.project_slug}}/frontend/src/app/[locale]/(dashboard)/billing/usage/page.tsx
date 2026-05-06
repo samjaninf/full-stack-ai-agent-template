@@ -2,7 +2,17 @@
 "use client";
 {% raw %}
 import { useEffect, useState, useCallback } from "react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import {
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  CartesianGrid,
+} from "recharts";
 import { Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,15 +24,29 @@ interface UsageAggregate {
   total_output_tokens: number;
   total_cached_tokens: number;
   total_credits_charged: number;
-  total_events: number;
+  total_calls: number;
   by_model: Array<{
     model: string;
     provider: string;
     input_tokens: number;
     output_tokens: number;
     credits_charged: number;
-    events: number;
+    total_calls: number;
   }>;
+}
+
+interface UsageDailyBucket {
+  day: string;
+  input_tokens: number;
+  output_tokens: number;
+  cached_tokens: number;
+  credits_charged: number;
+  total_calls: number;
+}
+
+interface UsageTimeline {
+  buckets: UsageDailyBucket[];
+  days: number;
 }
 
 interface CreditTransaction {
@@ -36,23 +60,29 @@ interface CreditTransaction {
 
 export default function UsageDashboardPage() {
   const [aggregate, setAggregate] = useState<UsageAggregate | null>(null);
+  const [timeline, setTimeline] = useState<UsageTimeline | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchUsage = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const data = await apiClient.get<UsageAggregate>("/billing/me/credits/usage");
-      setAggregate(data);
+      const [agg, tl] = await Promise.all([
+        apiClient.get<UsageAggregate>("/billing/me/credits/usage"),
+        apiClient.get<UsageTimeline>("/billing/me/credits/usage/timeline?days=30"),
+      ]);
+      setAggregate(agg);
+      setTimeline(tl);
     } catch {
       setAggregate(null);
+      setTimeline(null);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchUsage();
-  }, [fetchUsage]);
+    fetchData();
+  }, [fetchData]);
 
   const handleExport = async () => {
     try {
@@ -83,12 +113,19 @@ export default function UsageDashboardPage() {
     }
   };
 
-  const chartData =
+  const byModelChartData =
     aggregate?.by_model.map((m) => ({
       name: m.model.split("-").slice(-2).join("-"),
       input: m.input_tokens,
       output: m.output_tokens,
       credits: m.credits_charged,
+    })) ?? [];
+
+  const timelineChartData =
+    timeline?.buckets.map((b) => ({
+      day: b.day.slice(5),  // "MM-DD"
+      credits: b.credits_charged,
+      calls: b.total_calls,
     })) ?? [];
 
   return (
@@ -136,14 +173,51 @@ export default function UsageDashboardPage() {
             <CardHeader className="pb-2">
               <CardDescription>Total API Calls</CardDescription>
               <CardTitle className="text-3xl tabular-nums">
-                {aggregate?.total_events.toLocaleString() ?? "—"}
+                {aggregate?.total_calls.toLocaleString() ?? "—"}
               </CardTitle>
             </CardHeader>
           </Card>
         </div>
       )}
 
-      {!isLoading && chartData.length > 0 && (
+      {!isLoading && timelineChartData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Daily Credits (Last 30 Days)</CardTitle>
+            <CardDescription>Credit consumption per day.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={220}>
+              <LineChart data={timelineChartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis
+                  dataKey="day"
+                  tick={{ fontSize: 11 }}
+                  className="fill-muted-foreground"
+                  interval="preserveStartEnd"
+                />
+                <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--popover))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="credits"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      )}
+
+      {!isLoading && byModelChartData.length > 0 && (
         <Card>
           <CardHeader>
             <CardTitle className="text-base">Credits by Model</CardTitle>
@@ -151,7 +225,7 @@ export default function UsageDashboardPage() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={chartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
+              <BarChart data={byModelChartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
                 <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
                 <XAxis
                   dataKey="name"

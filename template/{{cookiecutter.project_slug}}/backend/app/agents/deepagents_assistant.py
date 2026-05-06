@@ -25,16 +25,18 @@ Configuration via settings:
 """
 
 import logging
-from typing import Annotated, Any, TypedDict
+from collections.abc import Callable
+from typing import Any, TypedDict
 
 from deepagents import create_deep_agent
 from deepagents.backends import StateBackend
-from langchain_core.messages import AIMessage, BaseMessage, HumanMessage, SystemMessage
-{%- if cookiecutter.enable_rag %}
+from langchain_core.language_models import BaseChatModel
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+{%- if cookiecutter.enable_rag or cookiecutter.enable_web_search %}
 from langchain_core.tools import tool
 {%- endif %}
 from langgraph.checkpoint.memory import MemorySaver
-from langgraph.graph.message import add_messages
+from langgraph.graph.state import CompiledStateGraph
 from langgraph.types import Command
 {%- if cookiecutter.use_openai %}
 from langchain_openai import ChatOpenAI
@@ -55,37 +57,80 @@ from app.agents.tools import get_current_datetime
 from app.agents.tools.web_search import web_search
 {%- endif %}
 {%- if cookiecutter.enable_rag %}
+{%- if cookiecutter.enable_teams %}
+from app.agents.tools.rag_tool import _active_kb_collections, search_knowledge_base
+{%- else %}
 from app.agents.tools.rag_tool import search_knowledge_base
+{%- endif %}
 {%- endif %}
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
 
-{%- if cookiecutter.enable_rag %}
+{%- if cookiecutter.enable_web_search %}
 @tool
-async def search_documents(query: str, collection: str | None = None, top_k: int = 5) -> str:
+async def web_search_tool(query: str, max_results: int = 5) -> str:
+    """Search the web for current information.
+
+    Use this tool to find up-to-date information about events, facts, or topics
+    that may not be in the model's training data.
+
+    Args:
+        query: The search query string.
+        max_results: Maximum number of results to return (1-10, default: 5).
+
+    Returns:
+        Formatted string with search results including titles, URLs, and content.
+    """
+    return await web_search(query, max_results)
+{%- endif %}
+
+
+{%- if cookiecutter.enable_rag %}
+{%- if cookiecutter.enable_teams %}
+@tool
+async def search_documents(query: str, top_k: int = 5) -> str:
     """Search the knowledge base for relevant documents.
 
     Use this tool to find information from uploaded documents before answering user queries.
-    Searches across all available collections automatically.
+    Searches across all knowledge bases active for this conversation.
     Cite sources by referring to the document filename from the search results.
 
     Args:
         query: The search query string.
-        collection: Name of the collection to search (default: all collections).
         top_k: Number of top results to retrieve (default: 5).
 
     Returns:
         Formatted string with search results including content and scores.
     """
-    return await search_knowledge_base(query=query, collection=collection, top_k=top_k)
+    return await search_knowledge_base(query=query, top_k=top_k)
+{%- else %}
+@tool
+async def search_documents(query: str, top_k: int = 5) -> str:
+    """Search the knowledge base for relevant documents.
+
+    Use this tool to find information from uploaded documents before answering user queries.
+    Cite sources by referring to the document filename from the search results.
+
+    Args:
+        query: The search query string.
+        top_k: Number of top results to retrieve (default: 5).
+
+    Returns:
+        Formatted string with search results including content and scores.
+    """
+    return await search_knowledge_base(query=query, top_k=top_k)
+{%- endif %}
 
 
-# List of custom tools for DeepAgents when RAG is enabled
+# List of custom tools for DeepAgents
 DEEPAGENTS_CUSTOM_TOOLS = [search_documents]
 {%- else %}
 DEEPAGENTS_CUSTOM_TOOLS = []
+{%- endif %}
+{%- if cookiecutter.enable_web_search %}
+DEEPAGENTS_CUSTOM_TOOLS.append(web_search_tool)
 {%- endif %}
 
 
@@ -97,18 +142,11 @@ class AgentContext(TypedDict, total=False):
 
     user_id: str | None
     user_name: str | None
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+    # Resolved server-side from conversation.active_knowledge_base_ids — never from the LLM
+    kb_collection_names: list[str]
+{%- endif %}
     metadata: dict[str, Any]
-
-
-class AgentState(TypedDict):
-    """State for the DeepAgents agent.
-
-    This is what flows through the agent graph.
-    The messages field uses add_messages reducer to properly
-    append new messages to the conversation history.
-    """
-
-    messages: Annotated[list[BaseMessage], add_messages]
 
 
 class InterruptData(TypedDict):
@@ -179,8 +217,9 @@ def _parse_interrupt_config() -> dict[str, bool | dict[str, list[str]]] | None:
     ]
 
     if "all" in tools:
-        # Interrupt all tools
-        for tool_name in builtin_tools:
+        # Interrupt all tools — built-ins plus any registered custom tools
+        all_tool_names = builtin_tools + [t.name for t in DEEPAGENTS_CUSTOM_TOOLS]
+        for tool_name in all_tool_names:
             interrupt_on[tool_name] = {"allowed_decisions": allowed}
     else:
         for tool_name in tools:
@@ -235,7 +274,7 @@ class DeepAgentsAssistant:
         self._graph = None
         self._checkpointer = MemorySaver()
 
-    def _create_backend(self):
+    def _create_backend(self) -> Callable:
         """Create the file-storage backend.
 
         Returns:
@@ -243,7 +282,7 @@ class DeepAgentsAssistant:
         """
         return lambda rt: StateBackend(rt)
 
-    def _create_model(self):
+    def _create_model(self) -> BaseChatModel:
         """Create the LLM model for DeepAgents."""
 {%- if cookiecutter.use_openai %}
         return ChatOpenAI(
@@ -270,7 +309,7 @@ class DeepAgentsAssistant:
 {%- endif %}
 
     @property
-    def graph(self):
+    def graph(self) -> CompiledStateGraph:
         """Get or create the compiled graph instance.
 
         The agent is created with:
@@ -298,14 +337,12 @@ class DeepAgentsAssistant:
             )
 
             logger.info(
-                "DeepAgents initialized: model=%s backend=%s skills=%s memory=%s "
-                "interrupt_on=%s execute=%s",
+                "DeepAgents initialized: model=%s backend=%s skills=%s memory=%s interrupt_on=%s",
                 self.model_name,
                 settings.DEEPAGENTS_BACKEND_TYPE,
                 self.skills,
                 self.memory,
                 list(self.interrupt_on.keys()) if self.interrupt_on else None,
-                settings.DEEPAGENTS_ENABLE_EXECUTE,
             )
 
         return self._graph
@@ -386,7 +423,15 @@ class DeepAgentsAssistant:
         if files:
             input_data["files"] = files
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        token = _active_kb_collections.set(agent_context.get("kb_collection_names") or [])
+        try:
+            result = await self.graph.ainvoke(input_data, config=config)
+        finally:
+            _active_kb_collections.reset(token)
+{%- else %}
         result = await self.graph.ainvoke(input_data, config=config)
+{%- endif %}
 
         # Check for interrupt
         interrupt_data = self.extract_interrupt(result)
@@ -437,10 +482,21 @@ class DeepAgentsAssistant:
         logger.info(f"Resuming DeepAgents with {len(decisions)} decisions")
 
         # Resume with Command
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        token = _active_kb_collections.set(agent_context.get("kb_collection_names") or [])
+        try:
+            result = await self.graph.ainvoke(
+                Command(resume={"decisions": decisions}),
+                config=config,
+            )
+        finally:
+            _active_kb_collections.reset(token)
+{%- else %}
         result = await self.graph.ainvoke(
             Command(resume={"decisions": decisions}),
-            config=config
+            config=config,
         )
+{%- endif %}
 
         # Check for another interrupt
         interrupt_data = self.extract_interrupt(result)
@@ -507,6 +563,19 @@ class DeepAgentsAssistant:
 
         final_state: dict[str, Any] = {}
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        token = _active_kb_collections.set(agent_context.get("kb_collection_names") or [])
+        try:
+            async for stream_mode, data in self.graph.astream(
+                input_data,
+                config=config,
+                stream_mode=["messages", "updates"],
+            ):
+                final_state = data if stream_mode == "updates" else final_state
+                yield stream_mode, data
+        finally:
+            _active_kb_collections.reset(token)
+{%- else %}
         async for stream_mode, data in self.graph.astream(
             input_data,
             config=config,
@@ -514,6 +583,7 @@ class DeepAgentsAssistant:
         ):
             final_state = data if stream_mode == "updates" else final_state
             yield stream_mode, data
+{%- endif %}
 
         # Check for interrupt after stream completes by reading checkpoint state
         state = await self.graph.aget_state(config)
@@ -554,12 +624,25 @@ class DeepAgentsAssistant:
 
         logger.info(f"Streaming resume with {len(decisions)} decisions")
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        token = _active_kb_collections.set(agent_context.get("kb_collection_names") or [])
+        try:
+            async for stream_mode, data in self.graph.astream(
+                Command(resume={"decisions": decisions}),
+                config=config,
+                stream_mode=["messages", "updates"],
+            ):
+                yield stream_mode, data
+        finally:
+            _active_kb_collections.reset(token)
+{%- else %}
         async for stream_mode, data in self.graph.astream(
             Command(resume={"decisions": decisions}),
             config=config,
             stream_mode=["messages", "updates"],
         ):
             yield stream_mode, data
+{%- endif %}
 
         # Check for another interrupt by reading checkpoint state
         state = await self.graph.aget_state(config)
@@ -575,6 +658,8 @@ class DeepAgentsAssistant:
 
 
 def get_agent(
+    model_name: str | None = None,
+    thinking_effort: str | None = None,  # noqa: ARG001 — DeepAgents has no thinking concept
     skills: list[str] | None = None,
     memory: list[str] | None = None,
     interrupt_on: dict[str, bool | dict[str, list[str]]] | None = None,
@@ -583,6 +668,8 @@ def get_agent(
     """Factory function to create a DeepAgentsAssistant.
 
     Args:
+        model_name: Override the default AI model.
+        thinking_effort: Accepted for API parity with other agents; ignored.
         skills: Optional list of skill paths to override settings.
         memory: Optional list of AGENTS.md memory paths to override settings.
         interrupt_on: Optional interrupt config to override settings.
@@ -592,6 +679,7 @@ def get_agent(
         Configured DeepAgentsAssistant instance.
     """
     return DeepAgentsAssistant(
+        model_name=model_name,
         skills=skills,
         memory=memory,
         interrupt_on=interrupt_on,

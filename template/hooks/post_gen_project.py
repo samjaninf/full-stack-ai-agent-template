@@ -60,20 +60,26 @@ def remove_file(path: str) -> None:
 
 
 def is_stub_file(filepath: str) -> bool:
-    """Check if file only contains a docstring stub with no real code."""
+    """Return True if the file has no real code — empty or docstring-only."""
     if not os.path.exists(filepath):
         return False
     with open(filepath) as f:
         content = f.read().strip()
-    # Empty file
     if not content:
         return True
-    # File only has docstring (triple-quoted string)
+    # Single triple-quoted docstring, no real code
     if content.startswith('"""') and content.endswith('"""'):
-        # Check if there's only one docstring and no code
         inner = content[3:-3].strip()
-        return '"""' not in inner and "def " not in content and "class " not in content
-    return False
+        # No nested docstrings, no functions/classes
+        if '"""' not in inner and "def " not in content and "class " not in content:
+            return True
+    # Only comment lines + optional shebang/encoding — no code
+    lines = [l.strip() for l in content.splitlines() if l.strip()]
+    code_lines = [
+        l for l in lines
+        if not l.startswith("#") and l not in ("pass", "...")
+    ]
+    return len(code_lines) == 0
 
 
 def remove_dir(path: str) -> None:
@@ -254,12 +260,15 @@ if not enable_docker:
         remove_file(os.path.join(project_root, compose_file))
 
 # --- Cleanup stub files (files with only docstring, no code) ---
-core_dir = os.path.join(backend_app, "core")
-for stub_candidate in ["security.py", "cache.py", "rate_limit.py", "oauth.py", "logfire_setup.py", "csrf.py"]:
-    filepath = os.path.join(core_dir, stub_candidate)
-    if is_stub_file(filepath):
-        remove_file(filepath)
-        print(f"  Removed stub: {os.path.relpath(filepath)}")
+# Scan all .py files under backend/app — catches any template that rendered to
+# a stub docstring because its feature gate was disabled.
+for root, _dirs, files in os.walk(backend_app):
+    for fname in files:
+        if not fname.endswith(".py"):
+            continue
+        filepath = os.path.join(root, fname)
+        if is_stub_file(filepath):
+            remove_file(filepath)
 
 # --- Worker/Background tasks ---
 use_any_background_tasks = use_celery or use_taskiq or use_arq

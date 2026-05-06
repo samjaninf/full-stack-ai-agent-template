@@ -1,6 +1,7 @@
 {%- if cookiecutter.use_telegram or cookiecutter.use_slack %}
 """Framework-agnostic agent invocation for channel messages (non-streaming)."""
 
+import asyncio
 import logging
 from dataclasses import dataclass, field
 from typing import Any
@@ -53,10 +54,16 @@ class AgentInvocationService:
         conversation_id: UUID,
         user_id: UUID | None = None,
         project_id: UUID | None = None,
+{%- if cookiecutter.enable_teams %}
+        organization_id: UUID | None = None,
+{%- endif %}
 {%- else %}
         conversation_id: str,
         user_id: str | None = None,
         project_id: str | None = None,
+{%- if cookiecutter.enable_teams %}
+        organization_id: str | None = None,
+{%- endif %}
 {%- endif %}
         system_prompt_override: str | None = None,
         model_override: str | None = None,
@@ -72,6 +79,15 @@ class AgentInvocationService:
         # 2. Load history (excluding the message we just added to avoid duplication)
         history = await self._load_history(conversation_id)
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        # Resolve active KB collections server-side — never trust the client
+        kb_collection_names = await self._load_active_kb_collection_names(
+            conversation_id=conversation_id,
+            user_id=user_id,
+            organization_id=organization_id,
+        )
+{%- endif %}
+
         # 3. Call agent
         tool_events: list[ToolEvent] = []
         try:
@@ -81,6 +97,9 @@ class AgentInvocationService:
                 conversation_id=conversation_id,
                 user_id=user_id,
                 project_id=project_id,
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+                kb_collection_names=kb_collection_names,
+{%- endif %}
                 system_prompt_override=system_prompt_override,
                 model_override=model_override,
             )
@@ -136,7 +155,11 @@ class AgentInvocationService:
         assistant = get_agent(model_name=model_name)
 
         model_history = build_message_history(history)
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        deps = Deps(kb_collection_names=kwargs.get("kb_collection_names") or [])
+{%- else %}
         deps = Deps()
+{%- endif %}
 
         result = await assistant.agent.run(
             user_message,
@@ -222,6 +245,10 @@ class AgentInvocationService:
         from langchain_core.messages import AIMessage, HumanMessage
 
         from app.agents.langchain_assistant import get_agent
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        from app.agents.tools.rag_tool import _active_kb_collections
+        _active_kb_collections.set(kwargs.get("kb_collection_names") or [])
+{%- endif %}
 
         assistant = get_agent()
         lc_history = self._build_langchain_history(history)
@@ -265,6 +292,10 @@ class AgentInvocationService:
         from langchain_core.messages import AIMessage, HumanMessage
 
         from app.agents.langgraph_assistant import get_agent
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        from app.agents.tools.rag_tool import _active_kb_collections
+        _active_kb_collections.set(kwargs.get("kb_collection_names") or [])
+{%- endif %}
 
         assistant = get_agent()
         lc_history = self._build_langchain_history(history)
@@ -305,9 +336,11 @@ class AgentInvocationService:
         **kwargs: Any,
     ) -> tuple[str, list[ToolEvent]]:
         """Invoke CrewAI crew (synchronous, run in thread executor)."""
-        import asyncio
-
         from app.agents.crewai_assistant import get_agent
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        from app.agents.tools.rag_tool import _active_kb_collections
+        _active_kb_collections.set(kwargs.get("kb_collection_names") or [])
+{%- endif %}
 
         assistant = get_agent()
         loop = asyncio.get_event_loop()
@@ -331,6 +364,10 @@ class AgentInvocationService:
         from langchain_core.messages import AIMessage, HumanMessage
 
         from app.agents.deepagents_assistant import get_agent
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        from app.agents.tools.rag_tool import _active_kb_collections
+        _active_kb_collections.set(kwargs.get("kb_collection_names") or [])
+{%- endif %}
 
         assistant = get_agent()
         lc_history = self._build_langchain_history(history)
@@ -359,6 +396,127 @@ class AgentInvocationService:
             elif role == "system":
                 lc_msgs.append(SystemMessage(content=content))
         return lc_msgs
+{%- endif %}
+
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+    # KB resolution
+
+{%- if cookiecutter.use_postgresql %}
+    async def _load_active_kb_collection_names(
+        self,
+        *,
+        conversation_id: UUID,
+        user_id: UUID | None,
+        organization_id: UUID | None,
+    ) -> list[str]:
+        """Return vector-store collection names for the active KBs of this conversation.
+
+        Resolution is always server-side: we intersect the conversation's
+        active_knowledge_base_ids with the KBs actually visible to the user,
+        preventing any client-supplied KB IDs from leaking cross-org data.
+        """
+        from app.repositories import conversation_repo, knowledge_base_repo
+
+        conv = await conversation_repo.get_conversation_by_id(self.db, conversation_id)
+        if not conv:
+            return []
+
+        # Derive org_id from the conversation when the caller didn't supply one
+        effective_org_id = organization_id or getattr(conv, "organization_id", None)
+
+        active_ids: list[str] = conv.active_knowledge_base_ids or []
+        if not active_ids:
+            # Fall back to the org's default KB so the agent is never blind
+            if effective_org_id is not None:
+                default_kb = await knowledge_base_repo.get_default_for_org(self.db, effective_org_id)
+                if default_kb:
+                    return [default_kb.collection_name]
+            return []
+
+        # Security: only return collections the user is actually allowed to see
+        accessible = await knowledge_base_repo.get_accessible(
+            self.db,
+            user_id=user_id,
+            organization_id=effective_org_id,
+        )
+        active_set = set(str(i) for i in active_ids)
+        return [kb.collection_name for kb in accessible if str(kb.id) in active_set]
+
+{%- elif cookiecutter.use_sqlite %}
+    async def _load_active_kb_collection_names(
+        self,
+        *,
+        conversation_id: str,
+        user_id: str | None,
+        organization_id: str | None,
+    ) -> list[str]:
+        from app.repositories import conversation_repo, knowledge_base_repo
+
+        conv = conversation_repo.get_conversation_by_id(self.db, conversation_id)
+        if not conv:
+            return []
+
+        effective_org_id = organization_id or getattr(conv, "organization_id", None)
+
+        active_ids: list[str] = []
+        raw = conv.active_knowledge_base_ids
+        if raw:
+            import json
+            try:
+                active_ids = json.loads(raw) if isinstance(raw, str) else list(raw)
+            except (ValueError, TypeError):
+                active_ids = []
+
+        if not active_ids:
+            if effective_org_id is not None:
+                default_kb = knowledge_base_repo.get_default_for_org(self.db, effective_org_id)
+                if default_kb:
+                    return [default_kb.collection_name]
+            return []
+
+        accessible = knowledge_base_repo.get_accessible(
+            self.db,
+            user_id=user_id,
+            organization_id=effective_org_id,
+        )
+        active_set = set(active_ids)
+        return [kb.collection_name for kb in accessible if str(kb.id) in active_set]
+
+{%- elif cookiecutter.use_mongodb %}
+    async def _load_active_kb_collection_names(
+        self,
+        *,
+        conversation_id: str,
+        user_id: str | None,
+        organization_id: str | None,
+    ) -> list[str]:
+        from app.repositories import conversation_repo, knowledge_base_repo
+
+        conv = await conversation_repo.get_conversation_by_id(conversation_id)
+        if not conv:
+            return []
+
+        effective_org_id = organization_id or getattr(conv, "organization_id", None)
+
+        active_ids: list[str] = conv.active_knowledge_base_ids or []
+        if not active_ids:
+            if effective_org_id is not None:
+                default_kb = await knowledge_base_repo.get_default_for_org(effective_org_id)
+                if default_kb:
+                    return [default_kb.collection_name]
+            return []
+
+        accessible = await knowledge_base_repo.get_accessible(
+            user_id=user_id,
+            organization_id=effective_org_id,
+        )
+        active_set = set(active_ids)
+        return [kb.collection_name for kb in accessible if str(kb.id) in active_set]
+
+{%- else %}
+    async def _load_active_kb_collection_names(self, **_kwargs: object) -> list[str]:
+        return []
+{%- endif %}
 {%- endif %}
 
     # Persistence helpers

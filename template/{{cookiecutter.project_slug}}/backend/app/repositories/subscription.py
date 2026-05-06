@@ -47,6 +47,23 @@ async def delete(db: AsyncSession, *, db_sub: Subscription) -> None:
     await db.delete(db_sub)
     await db.flush()
 
+
+async def get_trialing_ending_soon(
+    db: AsyncSession, *, within_days: int = 3
+) -> list[Subscription]:
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    cutoff = now + timedelta(days=within_days)
+    result = await db.execute(
+        select(Subscription).where(
+            Subscription.status == SubscriptionStatus.TRIALING,
+            Subscription.trial_end.isnot(None),
+            Subscription.trial_end > now,
+            Subscription.trial_end <= cutoff,
+        )
+    )
+    return list(result.scalars().all())
+
 {%- elif cookiecutter.use_sqlite %}
 from sqlalchemy.orm import Session
 from sqlalchemy import select
@@ -89,6 +106,21 @@ def delete(db: Session, *, db_sub: Subscription) -> None:
     db.delete(db_sub)
     db.flush()
 
+
+def get_trialing_ending_soon(db: Session, *, within_days: int = 3) -> list[Subscription]:
+    from datetime import datetime, timezone, timedelta
+    now = datetime.now(timezone.utc)
+    cutoff = now + timedelta(days=within_days)
+    result = db.execute(
+        select(Subscription).where(
+            Subscription.status == "trialing",
+            Subscription.trial_end.isnot(None),
+            Subscription.trial_end > now,
+            Subscription.trial_end <= cutoff,
+        )
+    )
+    return list(result.scalars().all())
+
 {%- elif cookiecutter.use_mongodb %}
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.db.models.subscription import Subscription
@@ -117,6 +149,21 @@ async def update(db: AsyncIOMotorDatabase, *, db_sub: Subscription, **kwargs) ->
         setattr(db_sub, k, v)
     await db_sub.save()
     return db_sub
+
+
+async def get_trialing_ending_soon(
+    db: AsyncIOMotorDatabase, *, within_days: int = 3
+) -> list[Subscription]:
+    from datetime import datetime, timezone, timedelta
+    from app.db.models.subscription import SubscriptionStatus
+    now = datetime.now(timezone.utc)
+    cutoff = now + timedelta(days=within_days)
+    return await Subscription.find(
+        Subscription.status == SubscriptionStatus.TRIALING,
+        Subscription.trial_end != None,  # noqa: E711
+        Subscription.trial_end > now,
+        Subscription.trial_end <= cutoff,
+    ).to_list()
 
 {%- endif %}
 {%- else %}

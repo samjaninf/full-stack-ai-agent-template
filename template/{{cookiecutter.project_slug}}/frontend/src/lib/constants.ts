@@ -37,8 +37,10 @@ export const ROUTES = {
   RAG: "/rag",
 {%- endif %}
 {%- if cookiecutter.use_jwt %}
-  ADMIN_RATINGS: "/admin/ratings",
+  ADMIN: "/admin",
+  ADMIN_USERS: "/admin/users",
   ADMIN_CONVERSATIONS: "/admin/conversations",
+  ADMIN_RATINGS: "/admin/ratings",
 {%- endif %}
 {%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}
   ORGS: "/orgs",
@@ -51,6 +53,9 @@ export const ROUTES = {
 {%- endif %}
 {%- if cookiecutter.enable_billing and cookiecutter.enable_teams %}
   BILLING: "/billing",
+{%- endif %}
+{%- if cookiecutter.enable_billing %}
+  PRICING: "/pricing",
 {%- endif %}
 } as const;
 

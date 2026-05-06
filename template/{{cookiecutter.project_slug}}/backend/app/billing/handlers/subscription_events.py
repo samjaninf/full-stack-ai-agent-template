@@ -54,7 +54,53 @@ async def handle_created(db: AsyncSession, event: stripe.Event) -> None:
 
 
 async def handle_updated(db: AsyncSession, event: stripe.Event) -> None:
-    await _sync_from_stripe(db, event.data.object)
+    stripe_sub = event.data.object
+    await _sync_from_stripe(db, stripe_sub)
+{%- if cookiecutter.enable_email %}
+    prev = event.data.previous_attributes
+    if prev is None:
+        return
+    prev_status = prev.get("status") if hasattr(prev, "get") else None
+    if prev_status == "trialing" and stripe_sub.status not in ("active", "trialing"):
+        try:
+            customer = stripe.Customer.retrieve(stripe_sub.customer)
+            from app.email.service import get_email_service
+            from app.core.config import settings
+            email_svc = get_email_service()
+            await email_svc.send_trial_expired(
+                to=customer.email or "",
+                name=customer.name or customer.email or "there",
+                upgrade_url=settings.BILLING_SUCCESS_URL,
+            )
+        except Exception:
+            logger.exception("email_trial_expired_failed")
+    elif prev.get("items") and stripe_sub.status == "active":
+        try:
+            customer = stripe.Customer.retrieve(stripe_sub.customer)
+            from app.email.service import get_email_service
+            import datetime as _dt
+            email_svc = get_email_service()
+            try:
+                new_price = stripe_sub["items"]["data"][0]["price"]
+                new_plan = new_price.get("nickname") or new_price["id"]
+            except (KeyError, IndexError):
+                new_plan = "updated plan"
+            try:
+                old_items_data = (prev.get("items") or {}).get("data") or []
+                old_price = old_items_data[0]["price"] if old_items_data else {}
+                old_plan = old_price.get("nickname") or old_price.get("id") or "previous plan"
+            except (KeyError, IndexError, TypeError):
+                old_plan = "previous plan"
+            await email_svc.send_subscription_changed(
+                to=customer.email or "",
+                name=customer.name or customer.email or "there",
+                old_plan=old_plan,
+                new_plan=new_plan,
+                effective_date=_dt.datetime.now(_dt.timezone.utc).strftime("%B %d, %Y"),
+            )
+        except Exception:
+            logger.exception("email_subscription_changed_failed")
+{%- endif %}
 
 
 async def handle_deleted(db: AsyncSession, event: stripe.Event) -> None:
@@ -150,15 +196,62 @@ def _sync_from_stripe(db: Session, stripe_sub: stripe.Subscription) -> Subscript
     return sub_repo.create(db, **fields)
 
 
-def handle_created(db: Session, event: stripe.Event) -> None:
+async def handle_created(db: Session, event: stripe.Event) -> None:
     _sync_from_stripe(db, event.data.object)
 
 
-def handle_updated(db: Session, event: stripe.Event) -> None:
-    _sync_from_stripe(db, event.data.object)
+async def handle_updated(db: Session, event: stripe.Event) -> None:
+    stripe_sub = event.data.object
+    _sync_from_stripe(db, stripe_sub)
+{%- if cookiecutter.enable_email %}
+    prev = event.data.previous_attributes
+    if prev is None:
+        return
+    prev_status = prev.get("status") if hasattr(prev, "get") else None
+    if prev_status == "trialing" and stripe_sub.status not in ("active", "trialing"):
+        try:
+            import datetime as _dt
+            customer = stripe.Customer.retrieve(stripe_sub.customer)
+            from app.email.service import get_email_service
+            from app.core.config import settings
+            email_svc = get_email_service()
+            await email_svc.send_trial_expired(
+                to=customer.email or "",
+                name=customer.name or customer.email or "there",
+                upgrade_url=settings.BILLING_SUCCESS_URL,
+            )
+        except Exception:
+            logger.exception("email_trial_expired_failed")
+    elif prev.get("items") and stripe_sub.status == "active":
+        try:
+            import datetime as _dt
+            customer = stripe.Customer.retrieve(stripe_sub.customer)
+            from app.email.service import get_email_service
+            email_svc = get_email_service()
+            try:
+                new_price = stripe_sub["items"]["data"][0]["price"]
+                new_plan = new_price.get("nickname") or new_price["id"]
+            except (KeyError, IndexError):
+                new_plan = "updated plan"
+            try:
+                old_items_data = (prev.get("items") or {}).get("data") or []
+                old_price = old_items_data[0]["price"] if old_items_data else {}
+                old_plan = old_price.get("nickname") or old_price.get("id") or "previous plan"
+            except (KeyError, IndexError, TypeError):
+                old_plan = "previous plan"
+            await email_svc.send_subscription_changed(
+                to=customer.email or "",
+                name=customer.name or customer.email or "there",
+                old_plan=old_plan,
+                new_plan=new_plan,
+                effective_date=_dt.datetime.now(_dt.timezone.utc).strftime("%B %d, %Y"),
+            )
+        except Exception:
+            logger.exception("email_subscription_changed_failed")
+{%- endif %}
 
 
-def handle_deleted(db: Session, event: stripe.Event) -> None:
+async def handle_deleted(db: Session, event: stripe.Event) -> None:
     stripe_sub = event.data.object
     sub = sub_repo.get_by_stripe_id(db, stripe_sub.id)
     if sub:
@@ -166,43 +259,43 @@ def handle_deleted(db: Session, event: stripe.Event) -> None:
         db.flush()
 {%- if cookiecutter.enable_email %}
     try:
-        import asyncio, datetime as _dt
+        import datetime as _dt
         customer = stripe.Customer.retrieve(stripe_sub.customer)
         from app.email.service import get_email_service
         from app.core.config import settings
         period_end = stripe_sub.current_period_end
         access_until = _dt.datetime.fromtimestamp(period_end, _dt.timezone.utc).strftime("%B %d, %Y") if period_end else "end of billing period"
         email_svc = get_email_service()
-        asyncio.run(email_svc.send_subscription_canceled(
+        await email_svc.send_subscription_canceled(
             to=customer.email or "",
             name=customer.name or customer.email or "there",
             plan_name="subscription",
             access_until=access_until,
             resubscribe_url=settings.BILLING_SUCCESS_URL,
-        ))
+        )
     except Exception:
         logger.exception("email_subscription_canceled_failed")
 {%- endif %}
 
 
-def handle_trial_ending(db: Session, event: stripe.Event) -> None:
+async def handle_trial_ending(db: Session, event: stripe.Event) -> None:
     stripe_sub = event.data.object
     logger.info("subscription_trial_ending", extra={"stripe_sub_id": stripe_sub.id})
 {%- if cookiecutter.enable_email %}
     try:
-        import asyncio, datetime as _dt
+        import datetime as _dt
         customer = stripe.Customer.retrieve(stripe_sub.customer)
         from app.email.service import get_email_service
         from app.core.config import settings
         trial_end_ts = stripe_sub.trial_end or 0
         days_left = max(1, int((trial_end_ts - _dt.datetime.now(_dt.timezone.utc).timestamp()) / 86400))
         email_svc = get_email_service()
-        asyncio.run(email_svc.send_trial_ending(
+        await email_svc.send_trial_ending(
             to=customer.email or "",
             name=customer.name or customer.email or "there",
             days_left=days_left,
             upgrade_url=settings.BILLING_SUCCESS_URL,
-        ))
+        )
     except Exception:
         logger.exception("email_trial_ending_failed")
 {%- endif %}
@@ -259,7 +352,53 @@ async def handle_created(db: AsyncIOMotorDatabase, event: stripe.Event) -> None:
 
 
 async def handle_updated(db: AsyncIOMotorDatabase, event: stripe.Event) -> None:
-    await _sync_from_stripe(db, event.data.object)
+    stripe_sub = event.data.object
+    await _sync_from_stripe(db, stripe_sub)
+{%- if cookiecutter.enable_email %}
+    prev = event.data.previous_attributes
+    if prev is None:
+        return
+    prev_status = prev.get("status") if hasattr(prev, "get") else None
+    if prev_status == "trialing" and stripe_sub.status not in ("active", "trialing"):
+        try:
+            customer = stripe.Customer.retrieve(stripe_sub.customer)
+            from app.email.service import get_email_service
+            from app.core.config import settings
+            email_svc = get_email_service()
+            await email_svc.send_trial_expired(
+                to=customer.email or "",
+                name=customer.name or customer.email or "there",
+                upgrade_url=settings.BILLING_SUCCESS_URL,
+            )
+        except Exception:
+            logger.exception("email_trial_expired_failed")
+    elif prev.get("items") and stripe_sub.status == "active":
+        try:
+            customer = stripe.Customer.retrieve(stripe_sub.customer)
+            from app.email.service import get_email_service
+            import datetime as _dt
+            email_svc = get_email_service()
+            try:
+                new_price = stripe_sub["items"]["data"][0]["price"]
+                new_plan = new_price.get("nickname") or new_price["id"]
+            except (KeyError, IndexError):
+                new_plan = "updated plan"
+            try:
+                old_items_data = (prev.get("items") or {}).get("data") or []
+                old_price = old_items_data[0]["price"] if old_items_data else {}
+                old_plan = old_price.get("nickname") or old_price.get("id") or "previous plan"
+            except (KeyError, IndexError, TypeError):
+                old_plan = "previous plan"
+            await email_svc.send_subscription_changed(
+                to=customer.email or "",
+                name=customer.name or customer.email or "there",
+                old_plan=old_plan,
+                new_plan=new_plan,
+                effective_date=_dt.datetime.now(_dt.timezone.utc).strftime("%B %d, %Y"),
+            )
+        except Exception:
+            logger.exception("email_subscription_changed_failed")
+{%- endif %}
 
 
 async def handle_deleted(db: AsyncIOMotorDatabase, event: stripe.Event) -> None:

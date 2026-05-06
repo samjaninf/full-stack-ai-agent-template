@@ -28,13 +28,17 @@ import logging
 from typing import Any, TypedDict
 
 from pydantic_ai import Agent
-from pydantic_ai_backends import StateBackend
+from pydantic_ai_backends import BackendProtocol, StateBackend
 from pydantic_deep import DeepAgentDeps, create_deep_agent
 
 from app.agents.prompts import DEFAULT_SYSTEM_PROMPT
 {%- if cookiecutter.enable_rag %}
 from app.agents.prompts import get_system_prompt_with_rag
+{%- if cookiecutter.enable_teams %}
+from app.agents.tools.rag_tool import _active_kb_collections, search_knowledge_base
+{%- else %}
 from app.agents.tools.rag_tool import search_knowledge_base
+{%- endif %}
 {%- endif %}
 from app.core.config import settings
 
@@ -54,6 +58,10 @@ class PydanticDeepContext(TypedDict, total=False):
 
     user_id: str | None
     user_name: str | None
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+    # Resolved server-side from conversation.active_knowledge_base_ids — never from the LLM
+    kb_collection_names: list[str]
+{%- endif %}
     metadata: dict[str, Any]
 
 
@@ -93,6 +101,7 @@ class PydanticDeepAssistant:
     def __init__(
         self,
         model_name: str | None = None,
+        thinking_effort: str | None = None,
         conversation_id: str = "default",
         user_id: str | None = None,
         user_name: str | None = None,
@@ -100,6 +109,7 @@ class PydanticDeepAssistant:
         history_messages_path: str | None = None,
     ):
         self.model_name = model_name or settings.AI_MODEL
+        self.thinking_effort = thinking_effort
         self.conversation_id = conversation_id
         self.user_id = user_id
         self.user_name = user_name
@@ -126,7 +136,7 @@ class PydanticDeepAssistant:
         prefix = _PROVIDER_PREFIXES.get(settings.LLM_PROVIDER, settings.LLM_PROVIDER)
         return f"{prefix}:{self.model_name}"
 
-    def _create_backend(self) -> Any:
+    def _create_backend(self) -> BackendProtocol:
         """Create the file-storage backend based on PYDANTIC_DEEP_BACKEND_TYPE."""
         backend_type = settings.PYDANTIC_DEEP_BACKEND_TYPE
 
@@ -155,7 +165,7 @@ class PydanticDeepAssistant:
         return DEFAULT_SYSTEM_PROMPT
 {%- endif %}
 
-    def _build_agent_and_deps(self) -> tuple[Agent, DeepAgentDeps]:
+    def _build_agent_and_deps(self) -> tuple[Agent[DeepAgentDeps, str], DeepAgentDeps]:
         """Instantiate the pydantic-deep agent and its dependencies."""
         backend = self._backend_override if self._backend_override is not None else self._create_backend()
         model_str = self._get_model_string()
@@ -208,10 +218,8 @@ class PydanticDeepAssistant:
             context_manager=True,
             # Cost tracking
             cost_tracking=True,
-            # Non-interactive: suppress approval prompts in web context
-            non_interactive=True,
-            # Skip local git / directory-tree injection (agent runs in backend)
-            include_local_context=False,
+            # Thinking effort — "auto" lets pydantic-ai resolve per-provider
+            thinking=self.thinking_effort or "auto",
             # Extra tools (e.g. RAG search)
             **({"tools": extra_tools} if extra_tools else {}),
         )
@@ -271,15 +279,18 @@ class PydanticDeepAssistant:
     async def run(
         self,
         user_input: str,
+        history: list[dict[str, str]] | None = None,  # noqa: ARG002 — managed internally via history_messages_path
         context: PydanticDeepContext | None = None,
     ) -> tuple[str, list[Any], PydanticDeepContext]:
         """Run the agent and return the full response.
 
         Note: pydantic-deep manages conversation history internally via the
-        backend (history_messages_path). There is no ``history`` parameter.
+        backend (history_messages_path). The ``history`` parameter is accepted
+        for API parity with other agent wrappers but is not used.
 
         Args:
             user_input: User's message.
+            history: Ignored — pydantic-deep persists history internally.
             context: Optional runtime context (user_id, user_name, metadata).
 
         Returns:
@@ -288,7 +299,15 @@ class PydanticDeepAssistant:
         agent_context: PydanticDeepContext = context if context is not None else {}
         logger.info("Running PydanticDeep agent: %s…", user_input[:100])
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        token = _active_kb_collections.set(agent_context.get("kb_collection_names") or [])
+        try:
+            result = await self.agent.run(user_input, deps=self.deps)
+        finally:
+            _active_kb_collections.reset(token)
+{%- else %}
         result = await self.agent.run(user_input, deps=self.deps)
+{%- endif %}
 
         tool_events: list[Any] = []
         for message in result.all_messages():
@@ -300,12 +319,50 @@ class PydanticDeepAssistant:
         logger.info("PydanticDeep run complete. Output: %d chars", len(result.output))
         return result.output, tool_events, agent_context
 
+    async def stream(
+        self,
+        user_input: str,
+        history: list[dict[str, str]] | None = None,  # noqa: ARG002 — managed internally via history_messages_path
+        context: PydanticDeepContext | None = None,
+    ):
+        """Stream agent execution token by token.
+
+        Note: pydantic-deep manages conversation history internally via the
+        backend (history_messages_path). The ``history`` parameter is accepted
+        for API parity with other agent wrappers but is not used.
+
+        Args:
+            user_input: User's message.
+            history: Ignored — pydantic-deep persists history internally.
+            context: Optional runtime context.
+
+        Yields:
+            Tuples of ("messages", (chunk, metadata)) for LLM tokens.
+        """
+        agent_context: PydanticDeepContext = context if context is not None else {}
+        logger.info("Streaming PydanticDeep agent: %s…", user_input[:100])
+
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        token = _active_kb_collections.set(agent_context.get("kb_collection_names") or [])
+        try:
+            async with self.agent.run_stream(user_input, deps=self.deps) as response:
+                async for text in response.stream_text(delta=True):
+                    yield "messages", (text, {})
+        finally:
+            _active_kb_collections.reset(token)
+{%- else %}
+        async with self.agent.run_stream(user_input, deps=self.deps) as response:
+            async for text in response.stream_text(delta=True):
+                yield "messages", (text, {})
+{%- endif %}
+
 
 # Factory helpers
 
 
 def get_agent(
     model_name: str | None = None,
+    thinking_effort: str | None = None,
     conversation_id: str = "default",
     user_id: str | None = None,
     user_name: str | None = None,
@@ -316,6 +373,7 @@ def get_agent(
 
     Args:
         model_name: Override AI_MODEL from settings.
+        thinking_effort: Extended thinking effort level (e.g. "low", "medium", "high").
         conversation_id: Scope history to this conversation (default: "default").
         user_id: Optional user identifier for context.
         user_name: Optional user display name for context.
@@ -329,6 +387,7 @@ def get_agent(
     """
     return PydanticDeepAssistant(
         model_name=model_name,
+        thinking_effort=thinking_effort,
         conversation_id=conversation_id,
         user_id=user_id,
         user_name=user_name,

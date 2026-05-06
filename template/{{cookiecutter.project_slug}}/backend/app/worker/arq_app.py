@@ -29,6 +29,15 @@ async def shutdown(ctx: dict[str, Any]) -> None:
 {%- if cookiecutter.enable_rag %}
 from app.worker.tasks.rag_tasks import sync_single_source_task, check_scheduled_syncs
 {%- endif %}
+{%- if cookiecutter.enable_email and cookiecutter.enable_billing %}
+from app.worker.tasks.email_tasks import send_trial_reminders_task
+{%- endif %}
+{%- if cookiecutter.enable_email and cookiecutter.enable_credits_system %}
+from app.worker.tasks.email_tasks import send_low_credits_alerts_task
+{%- endif %}
+{%- if cookiecutter.enable_credits_system %}
+from app.worker.tasks.cleanup_tasks import cleanup_usage_events_task
+{%- endif %}
 
 # === Example Tasks ===
 # Tasks are defined as regular async functions
@@ -150,6 +159,15 @@ class WorkerSettings:
 {%- if cookiecutter.enable_rag %}
         sync_single_source_task,
 {%- endif %}
+{%- if cookiecutter.enable_email and cookiecutter.enable_billing %}
+        send_trial_reminders_task,
+{%- endif %}
+{%- if cookiecutter.enable_email and cookiecutter.enable_credits_system %}
+        send_low_credits_alerts_task,
+{%- endif %}
+{%- if cookiecutter.enable_credits_system %}
+        cleanup_usage_events_task,
+{%- endif %}
     ]
 
     # Scheduled/cron jobs
@@ -158,6 +176,15 @@ class WorkerSettings:
         # cron(scheduled_example, minute=0, hour=0),  # Daily at midnight
 {%- if cookiecutter.enable_rag %}
         cron(check_scheduled_syncs),  # Every minute (default: all fields = any)
+{%- endif %}
+{%- if cookiecutter.enable_email and cookiecutter.enable_billing %}
+        cron(send_trial_reminders_task, hour=9, minute=0),  # Daily at 09:00
+{%- endif %}
+{%- if cookiecutter.enable_email and cookiecutter.enable_credits_system %}
+        cron(send_low_credits_alerts_task, minute=0),  # Every hour (arq cron: minute=0 = top of each hour)
+{%- endif %}
+{%- if cookiecutter.enable_credits_system %}
+        cron(cleanup_usage_events_task, weekday=0, hour=3, minute=0),  # Weekly Sunday 03:00
 {%- endif %}
     ]
 

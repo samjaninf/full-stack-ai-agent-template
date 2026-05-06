@@ -8,8 +8,17 @@ import logging
 from dataclasses import dataclass, field
 from typing import Any
 
-from pydantic_ai import Agent, RunContext
-from pydantic_ai.capabilities import WebFetch, WebSearch
+from pydantic_ai import Agent, ModelRetry{%- if cookiecutter.enable_rag %}, RunContext{%- endif %}
+from pydantic_ai.capabilities import (
+    ReinjectSystemPrompt,
+    Thinking,
+{%- if cookiecutter.enable_web_fetch %}
+    WebFetch,
+{%- endif %}
+{%- if cookiecutter.enable_web_search %}
+    WebSearch,
+{%- endif %}
+)
 from pydantic_ai.messages import (
     ModelRequest,
     ModelResponse,
@@ -39,9 +48,6 @@ from app.agents.prompts import DEFAULT_SYSTEM_PROMPT
 from app.agents.prompts import get_system_prompt_with_rag
 {%- endif %}
 from app.agents.tools import get_current_datetime
-{%- if cookiecutter.enable_web_search %}
-from app.agents.tools.web_search import web_search
-{%- endif %}
 {%- if cookiecutter.enable_rag %}
 from app.agents.tools.rag_tool import search_knowledge_base
 {%- endif %}
@@ -59,6 +65,10 @@ class Deps:
 
     user_id: str | None = None
     user_name: str | None = None
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+    # Resolved server-side from conversation.active_knowledge_base_ids — never from the LLM
+    kb_collection_names: list[str] = field(default_factory=list)
+{%- endif %}
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
@@ -73,9 +83,13 @@ class AssistantAgent:
         model_name: str | None = None,
         temperature: float | None = None,
         system_prompt: str | None = None,
+        thinking_effort: str | None = None,
     ):
         self.model_name = model_name or settings.AI_MODEL
         self.temperature = temperature or settings.AI_TEMPERATURE
+        self.thinking_effort = thinking_effort if thinking_effort is not None else (
+            settings.AI_THINKING_EFFORT if settings.AI_THINKING_ENABLED else None
+        )
 {%- if cookiecutter.enable_rag %}
         self.system_prompt = system_prompt or get_system_prompt_with_rag()
 {%- else %}
@@ -109,14 +123,21 @@ class AssistantAgent:
         )
 {%- endif %}
 
+        capabilities = [ReinjectSystemPrompt()]
+        if self.thinking_effort:
+            capabilities.append(Thinking(effort=self.thinking_effort))
+{%- if cookiecutter.enable_web_search %}
+        capabilities.append(WebSearch())
+{%- endif %}
+{%- if cookiecutter.enable_web_fetch %}
+        capabilities.append(WebFetch())
+{%- endif %}
+
         agent = Agent[Deps, str](
             model=model,
             model_settings=ModelSettings(temperature=self.temperature),
             system_prompt=self.system_prompt,
-            capabilities=[
-                WebSearch(),
-                WebFetch(),
-            ],
+            capabilities=capabilities,
         )
 
         self._register_tools(agent)
@@ -126,8 +147,8 @@ class AssistantAgent:
     def _register_tools(self, agent: Agent[Deps, str]) -> None:
         """Register all tools on the agent."""
 
-        @agent.tool
-        async def current_datetime(ctx: RunContext[Deps]) -> str:
+        @agent.tool_plain
+        def current_datetime() -> str:
             """Get the current date and time.
 
             Use this tool when you need to know the current date or time.
@@ -142,7 +163,6 @@ class AssistantAgent:
             """Search the knowledge base for relevant documents.
 
             Use this tool to find information from uploaded documents before answering user queries.
-            Searches across all available collections automatically.
             Cite sources by referring to the document filename from the search results.
 
             Args:
@@ -152,22 +172,37 @@ class AssistantAgent:
             Returns:
                 Formatted string with search results including content and scores.
             """
-            return await search_knowledge_base(query=query, top_k=top_k)
+{%- if cookiecutter.enable_teams %}
+            try:
+                return await search_knowledge_base(
+                    query=query,
+                    kb_collection_names=ctx.deps.kb_collection_names,
+                    top_k=top_k,
+                )
+            except Exception as e:
+                raise ModelRetry("Knowledge base temporarily unavailable, please try again.") from e
+{%- else %}
+            try:
+                return await search_knowledge_base(query=query, top_k=top_k)
+            except Exception as e:
+                raise ModelRetry("Knowledge base temporarily unavailable, please try again.") from e
+{%- endif %}
 {%- endif %}
 
-{%- if cookiecutter.enable_web_search %}
-        @agent.tool
-        async def search_web(ctx: RunContext[Deps], query: str, max_results: int = 5) -> str:
-            """Search the web for current information.
 
-            Use this tool when you need up-to-date information from the internet.
-
-            Args:
-                query: The search query.
-                max_results: Number of results (1-10, default: 5).
-            """
-            return await web_search(query=query, max_results=max_results)
-{%- endif %}
+    @staticmethod
+    def _build_model_history(
+        history: list[dict[str, str]] | None,
+    ) -> list[ModelRequest | ModelResponse]:
+        model_history: list[ModelRequest | ModelResponse] = []
+        for msg in history or []:
+            if msg["role"] == "user":
+                model_history.append(ModelRequest(parts=[UserPromptPart(content=msg["content"])]))
+            elif msg["role"] == "assistant":
+                model_history.append(ModelResponse(parts=[TextPart(content=msg["content"])]))
+            elif msg["role"] == "system":
+                model_history.append(ModelRequest(parts=[SystemPromptPart(content=msg["content"])]))
+        return model_history
 
     @property
     def agent(self) -> Agent[Deps, str]:
@@ -192,20 +227,14 @@ class AssistantAgent:
         Returns:
             Tuple of (output_text, tool_events, deps).
         """
-        model_history: list[ModelRequest | ModelResponse] = []
-
-        for msg in history or []:
-            if msg["role"] == "user":
-                model_history.append(ModelRequest(parts=[UserPromptPart(content=msg["content"])]))
-            elif msg["role"] == "assistant":
-                model_history.append(ModelResponse(parts=[TextPart(content=msg["content"])]))
-            elif msg["role"] == "system":
-                model_history.append(ModelRequest(parts=[SystemPromptPart(content=msg["content"])]))
-
         agent_deps = deps if deps is not None else Deps()
 
         logger.info(f"Running agent with user input: {user_input[:100]}...")
-        result = await self.agent.run(user_input, deps=agent_deps, message_history=model_history)
+        result = await self.agent.run(
+            user_input,
+            deps=agent_deps,
+            message_history=self._build_model_history(history),
+        )
 
         tool_events: list[Any] = []
         for message in result.all_messages():
@@ -234,37 +263,31 @@ class AssistantAgent:
         Yields:
             Agent events for streaming responses.
         """
-        model_history: list[ModelRequest | ModelResponse] = []
-
-        for msg in history or []:
-            if msg["role"] == "user":
-                model_history.append(ModelRequest(parts=[UserPromptPart(content=msg["content"])]))
-            elif msg["role"] == "assistant":
-                model_history.append(ModelResponse(parts=[TextPart(content=msg["content"])]))
-            elif msg["role"] == "system":
-                model_history.append(ModelRequest(parts=[SystemPromptPart(content=msg["content"])]))
-
         agent_deps = deps if deps is not None else Deps()
 
         async with self.agent.iter(
             user_input,
             deps=agent_deps,
-            message_history=model_history,
+            message_history=self._build_model_history(history),
         ) as run:
             async for event in run:
                 yield event
 
 
-def get_agent(model_name: str | None = None) -> AssistantAgent:
+def get_agent(
+    model_name: str | None = None,
+    thinking_effort: str | None = None,
+) -> AssistantAgent:
     """Factory function to create an AssistantAgent.
 
     Args:
         model_name: Override the default AI model.
+        thinking_effort: Override thinking effort ("low", "medium", "high", or None to disable).
 
     Returns:
         Configured AssistantAgent instance.
     """
-    return AssistantAgent(model_name=model_name)
+    return AssistantAgent(model_name=model_name, thinking_effort=thinking_effort)
 
 
 async def run_agent(

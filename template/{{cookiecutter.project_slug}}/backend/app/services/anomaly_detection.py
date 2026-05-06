@@ -5,6 +5,10 @@ from __future__ import annotations
 
 import logging
 from datetime import UTC, datetime, timedelta
+{%- if cookiecutter.enable_slack_alerts %}
+import httpx
+from app.core.config import settings
+{%- endif %}
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +68,6 @@ async def detect_spike(db: AsyncSession, organization_id: uuid.UUID) -> dict | N
 
 async def send_slack_alert(spike: dict) -> None:
 {%- if cookiecutter.enable_slack_alerts %}
-    import httpx
-    from app.core.config import settings
     webhook_url = getattr(settings, "SLACK_ANOMALY_WEBHOOK_URL", None)
     if not webhook_url:
         return
@@ -134,8 +136,6 @@ def detect_spike(db: Session, organization_id: str) -> dict | None:
 
 def send_slack_alert(spike: dict) -> None:
 {%- if cookiecutter.enable_slack_alerts %}
-    import httpx
-    from app.core.config import settings
     webhook_url = getattr(settings, "SLACK_ANOMALY_WEBHOOK_URL", None)
     if not webhook_url:
         return
@@ -204,8 +204,6 @@ async def detect_spike(db: AsyncIOMotorDatabase, organization_id: str) -> dict |
 
 async def send_slack_alert(spike: dict) -> None:
 {%- if cookiecutter.enable_slack_alerts %}
-    import httpx
-    from app.core.config import settings
     webhook_url = getattr(settings, "SLACK_ANOMALY_WEBHOOK_URL", None)
     if not webhook_url:
         return

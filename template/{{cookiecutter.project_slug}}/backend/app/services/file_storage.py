@@ -9,6 +9,8 @@ import uuid
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from app.core.config import settings
+
 logger = logging.getLogger(__name__)
 
 ALLOWED_MIME_TYPES = {
@@ -96,6 +98,5 @@ class LocalFileStorage(BaseFileStorage):
 
 def get_file_storage() -> BaseFileStorage:
     """Factory: create file storage backend based on settings."""
-    from app.core.config import settings
     media_dir = getattr(settings, "MEDIA_DIR", "media")
     return LocalFileStorage(base_dir=media_dir)

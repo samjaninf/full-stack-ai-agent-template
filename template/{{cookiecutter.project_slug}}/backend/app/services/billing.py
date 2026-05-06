@@ -11,6 +11,7 @@ from app.billing.subscription_service import SubscriptionService
 from app.billing.webhook_handler import WebhookHandler
 from app.billing.stripe_client import StripeClient
 from app.billing.exceptions import InvalidWebhookError
+from app.core.config import settings
 from app.core.exceptions import BadRequestError
 from app.db.models.organization import Organization
 from app.db.models.user import User
@@ -38,7 +39,6 @@ class BillingService:
         user: User | None = None,
     ) -> str:
         """Create a Stripe Checkout session URL."""
-        from app.core.config import settings
         import app.repositories.plan as plan_repo
 
         if not price_id:
@@ -131,14 +131,14 @@ class BillingService:
     def create_portal_session(self, org: Organization) -> str:
         return self._checkout.create_portal_session(org_id=str(org.id))
 
-    def handle_webhook_event(self, payload: bytes, sig_header: str) -> None:
+    async def handle_webhook_event(self, payload: bytes, sig_header: str) -> None:
         try:
             event = StripeClient.construct_event(payload=payload, signature=sig_header)
         except InvalidWebhookError as exc:
             raise BadRequestError(message=str(exc)) from exc
 
         handler = WebhookHandler(self.db)
-        handler.dispatch(event)
+        await handler.dispatch(event)
 
     def get_subscription(self, org_id: str) -> Subscription | None:
         return self._subscription.get_for_org(org_id)

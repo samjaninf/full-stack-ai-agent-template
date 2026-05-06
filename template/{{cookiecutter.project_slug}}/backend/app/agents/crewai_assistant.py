@@ -7,6 +7,7 @@ Uses CrewAI's event system for real-time streaming to WebSocket.
 """
 
 import asyncio
+import contextvars
 import logging
 import os
 from queue import Empty, Queue
@@ -540,8 +541,9 @@ class CrewAIAssistant:
             finally:
                 event_queue.put(None)  # Signal completion
 
-        # Start crew in background thread
-        thread = Thread(target=run_with_events, daemon=True)
+        # Start crew in background thread, propagating ContextVars (e.g. _active_kb_collections)
+        _ctx = contextvars.copy_context()
+        thread = Thread(target=lambda: _ctx.run(run_with_events), daemon=True)
         thread.start()
 
         # Yield events as they arrive

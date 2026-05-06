@@ -153,6 +153,20 @@ class EmailService:
             context={"name": name, "days_left": days_left, "upgrade_url": upgrade_url, "app_name": "{{ cookiecutter.project_name }}"},
         )
 
+    async def send_trial_expired(self, *, to: str, name: str, upgrade_url: str) -> SendResult:
+        return await self.send(
+            key=EmailKey.TRIAL_EXPIRED,
+            to=to,
+            context={"name": name, "upgrade_url": upgrade_url, "app_name": "{{ cookiecutter.project_name }}"},
+        )
+
+    async def send_subscription_changed(self, *, to: str, name: str, old_plan: str, new_plan: str, effective_date: str) -> SendResult:
+        return await self.send(
+            key=EmailKey.SUBSCRIPTION_CHANGED,
+            to=to,
+            context={"name": name, "old_plan": old_plan, "new_plan": new_plan, "effective_date": effective_date, "app_name": "{{ cookiecutter.project_name }}"},
+        )
+
     async def send_subscription_canceled(self, *, to: str, name: str, plan_name: str, access_until: str, resubscribe_url: str) -> SendResult:
         return await self.send(
             key=EmailKey.SUBSCRIPTION_CANCELED,

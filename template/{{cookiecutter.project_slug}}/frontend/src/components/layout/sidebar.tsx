@@ -4,8 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { ROUTES } from "@/lib/constants";
-import { LayoutDashboard, MessageSquare{%- if cookiecutter.enable_rag %}, Database{%- endif %}{%- if cookiecutter.use_jwt %}, UserCircle{%- endif %}{%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}, Building2{%- endif %}{%- if cookiecutter.enable_billing and cookiecutter.enable_teams %}, CreditCard{%- endif %} } from "lucide-react";
-import { useSidebarStore } from "@/stores";
+import { LayoutDashboard, MessageSquare{%- if cookiecutter.enable_rag %}, Database{%- endif %}{%- if cookiecutter.use_jwt %}, UserCircle, ShieldAlert{%- endif %}{%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}, Building2{%- endif %}{%- if cookiecutter.enable_billing and cookiecutter.enable_teams %}, CreditCard{%- endif %} } from "lucide-react";
+import { useSidebarStore{%- if cookiecutter.use_jwt %}, useAuthStore{%- endif %} } from "@/stores";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetClose } from "@/components/ui";
 
 const navigation = [
@@ -30,6 +30,9 @@ const navigation = [
 
 function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
+{%- if cookiecutter.use_jwt %}
+  const { user } = useAuthStore();
+{%- endif %}
 
   return (
     <nav className="flex-1 space-y-1 p-4">
@@ -53,6 +56,24 @@ function NavLinks({ onNavigate }: { onNavigate?: () => void }) {
           </Link>
         );
       })}
+{%- if cookiecutter.use_jwt %}
+      {user?.role === "admin" && (
+        <Link
+          href={ROUTES.ADMIN}
+          onClick={onNavigate}
+          className={cn(
+            "flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors",
+            "min-h-[44px]",
+            pathname.startsWith("/admin")
+              ? "bg-secondary text-secondary-foreground"
+              : "text-muted-foreground hover:bg-secondary/50 hover:text-secondary-foreground"
+          )}
+        >
+          <ShieldAlert className="h-5 w-5" />
+          Admin
+        </Link>
+      )}
+{%- endif %}
     </nav>
   );
 }

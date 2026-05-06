@@ -56,6 +56,24 @@ celery_app.conf.beat_schedule["rag-sync-check"] = {
     "schedule": 60.0,  # Every 60 seconds
 }
 {%- endif %}
+{%- if cookiecutter.enable_email and cookiecutter.enable_billing %}
+celery_app.conf.beat_schedule["send-trial-reminders"] = {
+    "task": "app.worker.tasks.email_tasks.send_trial_reminders_task",
+    "schedule": crontab(hour=9, minute=0),  # Daily at 09:00
+}
+{%- endif %}
+{%- if cookiecutter.enable_email and cookiecutter.enable_credits_system %}
+celery_app.conf.beat_schedule["send-low-credits-alerts"] = {
+    "task": "app.worker.tasks.email_tasks.send_low_credits_alerts_task",
+    "schedule": crontab(minute=0, hour="*/4"),  # Every 4 hours
+}
+{%- endif %}
+{%- if cookiecutter.enable_credits_system %}
+celery_app.conf.beat_schedule["cleanup-usage-events"] = {
+    "task": "app.worker.tasks.cleanup_tasks.cleanup_usage_events_task",
+    "schedule": crontab(hour=3, minute=0, day_of_week=0),  # Weekly Sunday 03:00
+}
+{%- endif %}
 
 {%- if cookiecutter.enable_logfire and cookiecutter.logfire_celery %}
 

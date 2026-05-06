@@ -16,6 +16,9 @@ export interface Conversation {
   created_at: string;
   updated_at: string;
   is_archived: boolean;
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+  active_knowledge_base_ids?: string[];
+{%- endif %}
 }
 
 export interface ConversationMessage {

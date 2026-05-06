@@ -20,6 +20,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useSubscription, useBilling } from "@/hooks";
+import { SeatSelectorDialog } from "./seat-selector-dialog";
 import type { SubscriptionRead } from "@/types";
 
 function StatusBadge({ status }: { status: SubscriptionRead["status"] }) {
@@ -43,9 +44,10 @@ function StatusIcon({ status }: { status: SubscriptionRead["status"] }) {
 }
 
 export function SubscriptionPanel() {
-  const { subscription, isLoading, cancelSubscription, reactivateSubscription } = useSubscription();
+  const { subscription, isLoading, cancelSubscription, reactivateSubscription, updateSeats } = useSubscription();
   const { isLoading: billingLoading, openPortal, startCheckout } = useBilling();
   const [canceling, setCanceling] = useState(false);
+  const [seatDialogOpen, setSeatDialogOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -95,6 +97,7 @@ export function SubscriptionPanel() {
   const trialEnd = subscription.trial_end ? format(new Date(subscription.trial_end), "MMM d, yyyy") : null;
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div className="flex items-center justify-between">
@@ -163,6 +166,10 @@ export function SubscriptionPanel() {
           Manage Billing
         </Button>
 
+        <Button variant="outline" onClick={() => setSeatDialogOpen(true)} disabled={billingLoading}>
+          Change seats
+        </Button>
+
         {subscription.cancel_at_period_end ? (
           <Button onClick={reactivateSubscription} disabled={billingLoading}>
             Reactivate
@@ -201,6 +208,15 @@ export function SubscriptionPanel() {
         ) : null}
       </CardFooter>
     </Card>
+
+    <SeatSelectorDialog
+      open={seatDialogOpen}
+      onOpenChange={setSeatDialogOpen}
+      mode="update"
+      initialSeats={subscription.seats_quantity}
+      onUpdate={updateSeats}
+    />
+    </>
   );
 }
 {% endraw %}

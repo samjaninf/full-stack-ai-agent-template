@@ -9,6 +9,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.core.exceptions import AlreadyExistsError, AuthenticationError, NotFoundError
 from app.core.security import get_password_hash, verify_password
 from app.db.models.user import User
@@ -126,7 +127,6 @@ class UserService:
 {%- if cookiecutter.enable_email %}
         try:
             from app.email.service import get_email_service
-            from app.core.config import settings
             email_svc = get_email_service()
             login_url = getattr(settings, "BILLING_SUCCESS_URL", None) or getattr(settings, "FRONTEND_URL", "/")
             await email_svc.send_welcome(
@@ -274,6 +274,7 @@ from typing import TYPE_CHECKING, Any
 
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.exceptions import AlreadyExistsError, AuthenticationError, NotFoundError
 from app.core.security import get_password_hash, verify_password
 from app.db.models.user import User
@@ -495,6 +496,7 @@ Contains business logic for user operations. Uses UserRepository for database ac
 
 from typing import TYPE_CHECKING
 
+from app.core.config import settings
 from app.core.exceptions import AlreadyExistsError, AuthenticationError, NotFoundError
 from app.core.security import get_password_hash, verify_password
 from app.db.models.user import User

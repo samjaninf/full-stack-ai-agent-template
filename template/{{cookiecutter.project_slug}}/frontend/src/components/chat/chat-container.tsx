@@ -10,6 +10,10 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import type { PendingApproval, Decision } from "@/types";
 import { useConversationStore, useChatStore } from "@/stores";
 import { useConversations } from "@/hooks";
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag and cookiecutter.use_jwt %}
+import { Database } from "lucide-react";
+import { useKBPanelStore } from "@/stores";
+{%- endif %}
 
 export function ChatContainer() {
   return <AuthenticatedChatContainer />;
@@ -118,6 +122,10 @@ function AuthenticatedChatContainer() {
     }
   }, [messages]);
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag and cookiecutter.use_jwt %}
+  const { toggle: toggleKBPanel } = useKBPanelStore();
+{%- endif %}
+
   return (
     <ChatUI
       messages={messages}
@@ -129,6 +137,9 @@ function AuthenticatedChatContainer() {
       scrollContainerRef={scrollContainerRef}
       pendingApproval={pendingApproval}
       onResumeDecisions={sendResumeDecisions}
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag and cookiecutter.use_jwt %}
+      onToggleKBPanel={toggleKBPanel}
+{%- endif %}
     />
   );
 }
@@ -185,6 +196,9 @@ interface ChatUIProps {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   pendingApproval?: PendingApproval | null;
   onResumeDecisions?: (decisions: Decision[]) => void;
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag and cookiecutter.use_jwt %}
+  onToggleKBPanel?: () => void;
+{%- endif %}
 }
 
 function ChatUI({
@@ -197,6 +211,9 @@ function ChatUI({
   scrollContainerRef,
   pendingApproval,
   onResumeDecisions,
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag and cookiecutter.use_jwt %}
+  onToggleKBPanel,
+{%- endif %}
 }: ChatUIProps) {
   return (
     <div className="flex flex-col h-full max-w-4xl mx-auto w-full">
@@ -239,10 +256,22 @@ function ChatUI({
             />
           </div>
           <div className="flex items-center justify-between px-3 pb-2 sm:px-4 sm:pb-3">
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-2">
               <span
                 className={`inline-block h-1.5 w-1.5 rounded-full ${isConnected ? "bg-green-500" : "bg-red-500"}`}
               />
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag and cookiecutter.use_jwt %}
+              {onToggleKBPanel && (
+                <button
+                  onClick={onToggleKBPanel}
+                  className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  title="Toggle knowledge bases"
+                >
+                  <Database className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">KB</span>
+                </button>
+              )}
+{%- endif %}
             </div>
             {onModelChange && (
               <ModelSelector onChange={onModelChange} />

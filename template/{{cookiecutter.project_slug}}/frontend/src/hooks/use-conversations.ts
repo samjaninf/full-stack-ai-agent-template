@@ -197,6 +197,22 @@ export function useConversations() {
     [updateConversation, setError]
   );
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+  const updateActiveKBs = useCallback(
+    async (conversationId: string, kbIds: string[]) => {
+      updateConversation(conversationId, { active_knowledge_base_ids: kbIds });
+      try {
+        await apiClient.patch(`/conversations/${conversationId}`, {
+          active_knowledge_base_ids: kbIds,
+        });
+      } catch {
+        toast.error("Failed to update knowledge bases");
+      }
+    },
+    [updateConversation]
+  );
+{%- endif %}
+
   const startNewChat = useCallback(async () => {
     // If current conversation is empty (no messages), just reuse it
     const currentId = useConversationStore.getState().currentConversationId;
@@ -233,6 +249,9 @@ export function useConversations() {
     deleteConversation,
     renameConversation,
     startNewChat,
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+    updateActiveKBs,
+{%- endif %}
   };
 }
 {%- endif %}

@@ -10,3 +10,6 @@ export { useProjectStore } from "./project-store";
 {%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}
 export { useOrgStore } from "./org-store";
 {%- endif %}
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag and cookiecutter.use_jwt %}
+export { useKBPanelStore } from "./kb-panel-store";
+{%- endif %}

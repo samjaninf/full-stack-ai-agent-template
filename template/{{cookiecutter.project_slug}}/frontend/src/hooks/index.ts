@@ -21,5 +21,5 @@ export { useInvitations } from "./use-invitations";
 export { useKnowledgeBases } from "./use-knowledge-bases";
 {%- endif %}
 {%- if cookiecutter.enable_billing and cookiecutter.enable_teams %}
-export { useBilling, useSubscription, useCredits, usePlans } from "./use-billing";
+export { useBilling, useSubscription, useCredits, usePlans, useInvoices } from "./use-billing";
 {%- endif %}

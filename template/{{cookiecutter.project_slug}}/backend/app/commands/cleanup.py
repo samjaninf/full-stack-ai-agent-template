@@ -14,7 +14,7 @@ from app.commands import command, info, success, warning
 
 
 @command("cleanup", help="Clean up old data from the database")
-@click.option("--days", "-d", default=30, type=int, help="Delete records older than N days")
+@click.option("--days", "-d", default=90, type=int, help="Delete records older than N days")
 @click.option("--dry-run", is_flag=True, help="Show what would be deleted without making changes")
 @click.option("--force", "-f", is_flag=True, help="Skip confirmation prompt")
 def cleanup(days: int, dry_run: bool, force: bool) -> None:
@@ -40,57 +40,55 @@ def cleanup(days: int, dry_run: bool, force: bool) -> None:
     from app.db.session import async_session_maker
 
     async def _cleanup() -> None:
-        async with async_session_maker() as _session:
-            info(f"Cleaning up records older than {cutoff_date}...")
+        info(f"Cleaning up records older than {cutoff_date}...")
+        total_deleted = 0
+{%- if cookiecutter.enable_billing and cookiecutter.enable_credits_system %}
+        async with async_session_maker() as session:
+            import app.repositories.usage_event as usage_repo
+            from sqlalchemy import text
 
-            # Add your cleanup logic here
-            # Example:
-            # result = await session.execute(
-            #     delete(YourModel).where(YourModel.created_at < cutoff_date)
-            # )
-            # await session.commit()
-            # deleted_count = result.rowcount
+            deleted = await usage_repo.delete_older_than(session, cutoff_date)
+            await session.commit()
+            total_deleted += deleted
+            info(f"  usage_event: {deleted} rows deleted")
 
-            deleted_count = 0  # Replace with actual count
-            success(f"Deleted {deleted_count} records.")
+            await session.execute(text("REFRESH MATERIALIZED VIEW CONCURRENTLY mv_usage_daily"))
+            await session.commit()
+            info("  mv_usage_daily refreshed")
+{%- endif %}
+        success(f"Done. Total deleted: {total_deleted} rows.")
 
     asyncio.run(_cleanup())
 {%- elif cookiecutter.use_sqlite %}
     from app.db.session import SessionLocal
 
-    with SessionLocal() as _session:
-        info(f"Cleaning up records older than {cutoff_date}...")
-
-        # Add your cleanup logic here
-        # Example:
-        # result = session.execute(
-        #     delete(YourModel).where(YourModel.created_at < cutoff_date)
-        # )
-        # session.commit()
-        # deleted_count = result.rowcount
-
-        deleted_count = 0  # Replace with actual count
-        success(f"Deleted {deleted_count} records.")
+    info(f"Cleaning up records older than {cutoff_date}...")
+    total_deleted = 0
+{%- if cookiecutter.enable_billing and cookiecutter.enable_credits_system %}
+    with SessionLocal() as session:
+        import app.repositories.usage_event as usage_repo
+        deleted = usage_repo.delete_older_than(session, cutoff_date)
+        session.commit()
+        total_deleted += deleted
+        info(f"  usage_event: {deleted} rows deleted")
+{%- endif %}
+    success(f"Done. Total deleted: {total_deleted} rows.")
 {%- elif cookiecutter.use_mongodb %}
     from motor.motor_asyncio import AsyncIOMotorClient
     from app.core.config import settings
 
     async def _cleanup() -> None:
         client = AsyncIOMotorClient(settings.MONGO_URL)
-        _db = client[settings.MONGO_DB]
         info(f"Cleaning up records older than {cutoff_date}...")
-
-        # Add your cleanup logic here
-        # Example (with Beanie):
-        # from beanie import init_beanie
-        # await init_beanie(database=_db, document_models=[YourModel])
-        # deleted = await YourModel.find(
-        #     YourModel.created_at < cutoff_date
-        # ).delete()
-        # deleted_count = deleted.deleted_count
-
-        deleted_count = 0  # Replace with actual count
-        success(f"Deleted {deleted_count} records.")
+        total_deleted = 0
+{%- if cookiecutter.enable_billing and cookiecutter.enable_credits_system %}
+        db = client[settings.MONGO_DB]
+        import app.repositories.usage_event as usage_repo
+        deleted = await usage_repo.delete_older_than(db, cutoff_date)
+        total_deleted += deleted
+        info(f"  usage_event: {deleted} documents deleted")
+{%- endif %}
+        success(f"Done. Total deleted: {total_deleted} records.")
         client.close()
 
     asyncio.run(_cleanup())

@@ -3,6 +3,9 @@ import { getTranslations } from "next-intl/server";
 import { Badge, buttonVariants } from "@/components/ui";
 import { LandingNav } from "@/components/layout/landing-nav";
 import { APP_NAME, APP_DESCRIPTION, ROUTES, BACKEND_URL } from "@/lib/constants";
+{%- if cookiecutter.enable_newsletter_signup %}
+import { NewsletterSignup } from "@/components/marketing/newsletter-signup";
+{%- endif %}
 import { cn } from "@/lib/utils";
 import {
   Bot,
@@ -253,6 +256,9 @@ export default async function HomePage() {
 {%- if cookiecutter.enable_rag %}
                   <li><Link href={ROUTES.RAG} className="text-sm text-muted-foreground transition-colors hover:text-foreground">Knowledge Base</Link></li>
 {%- endif %}
+{%- if cookiecutter.enable_billing %}
+                  <li><Link href={ROUTES.PRICING} className="text-sm text-muted-foreground transition-colors hover:text-foreground">Pricing</Link></li>
+{%- endif %}
                 </ul>
               </div>
               <div>
@@ -269,6 +275,17 @@ export default async function HomePage() {
             </div>
           </div>
         </div>
+{%- if cookiecutter.enable_newsletter_signup %}
+        <div className="border-t border-border/50">
+          <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+            <div className="flex flex-col items-center gap-4 text-center">
+              <p className="text-sm font-semibold">Stay in the loop</p>
+              <p className="text-sm text-muted-foreground">Get updates on new features and releases.</p>
+              <NewsletterSignup />
+            </div>
+          </div>
+        </div>
+{%- endif %}
         <div className="border-t border-border/50">
           <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
             <p className="text-center text-xs text-muted-foreground">

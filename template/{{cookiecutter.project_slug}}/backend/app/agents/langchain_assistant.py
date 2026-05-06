@@ -8,7 +8,13 @@ import logging
 from typing import Any, TypedDict
 
 from langchain.agents import create_agent
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langgraph.graph.state import CompiledStateGraph
+from langchain.agents.middleware import (
+    ModelRetryMiddleware,
+    ToolCallLimitMiddleware,
+    ToolRetryMiddleware,
+)
+from langchain_core.messages import AIMessage, AnyMessage, HumanMessage, SystemMessage
 from langchain.tools import tool
 {%- if cookiecutter.use_openai %}
 from langchain_openai import ChatOpenAI
@@ -26,10 +32,14 @@ from app.agents.prompts import get_system_prompt_with_rag
 {%- endif %}
 from app.agents.tools import get_current_datetime
 {%- if cookiecutter.enable_web_search %}
-from app.agents.tools.web_search import web_search_sync
+from app.agents.tools.web_search import web_search
 {%- endif %}
 {%- if cookiecutter.enable_rag %}
-from app.agents.tools.rag_tool import search_knowledge_base_sync
+{%- if cookiecutter.enable_teams %}
+from app.agents.tools.rag_tool import _active_kb_collections, search_knowledge_base
+{%- else %}
+from app.agents.tools.rag_tool import search_knowledge_base
+{%- endif %}
 {%- endif %}
 from app.core.config import settings
 
@@ -44,6 +54,10 @@ class AgentContext(TypedDict, total=False):
 
     user_id: str | None
     user_name: str | None
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+    # Resolved server-side from conversation.active_knowledge_base_ids — never from the LLM
+    kb_collection_names: list[str]
+{%- endif %}
     metadata: dict[str, Any]
 
 
@@ -53,7 +67,7 @@ class AgentState(TypedDict):
     This is what flows through the agent graph.
     """
 
-    messages: list[Any]
+    messages: list[AnyMessage]
 
 
 @tool
@@ -65,9 +79,46 @@ def current_datetime() -> str:
     return get_current_datetime()
 
 
-{%- if cookiecutter.enable_rag %}
+{%- if cookiecutter.enable_web_search %}
 @tool
-def search_documents(query: str, collection: str = "documents", top_k: int = 5) -> str:
+async def web_search_tool(query: str, max_results: int = 5) -> str:
+    """Search the web for current information.
+
+    Use this tool to find up-to-date information about events, facts, or topics
+    that may not be in the model's training data.
+
+    Args:
+        query: The search query string.
+        max_results: Maximum number of results to return (1-10, default: 5).
+
+    Returns:
+        Formatted string with search results including titles, URLs, and content.
+    """
+    return await web_search(query, max_results)
+{%- endif %}
+
+
+{%- if cookiecutter.enable_rag %}
+{%- if cookiecutter.enable_teams %}
+@tool
+async def search_documents(query: str, top_k: int = 5) -> str:
+    """Search the knowledge base for relevant documents.
+
+    Use this tool to find information from uploaded documents before answering user queries.
+    Searches across all knowledge bases active for this conversation.
+    Cite sources by referring to the document filename from the search results.
+
+    Args:
+        query: The search query string.
+        top_k: Number of top results to retrieve (default: 5).
+
+    Returns:
+        Formatted string with search results including content and scores.
+    """
+    return await search_knowledge_base(query=query, top_k=top_k)
+{%- else %}
+@tool
+async def search_documents(query: str, top_k: int = 5) -> str:
     """Search the knowledge base for relevant documents.
 
     Use this tool to find information from uploaded documents before answering user queries.
@@ -75,13 +126,13 @@ def search_documents(query: str, collection: str = "documents", top_k: int = 5) 
 
     Args:
         query: The search query string.
-        collection: Name of the collection to search (default: "documents").
         top_k: Number of top results to retrieve (default: 5).
 
     Returns:
         Formatted string with search results including content and scores.
     """
-    return search_knowledge_base_sync(query=query, collection=collection, top_k=top_k)
+    return await search_knowledge_base(query=query, top_k=top_k)
+{%- endif %}
 {%- endif %}
 
 
@@ -104,16 +155,16 @@ class LangChainAssistant:
 {%- else %}
         self.system_prompt = system_prompt or DEFAULT_SYSTEM_PROMPT
 {%- endif %}
-        self._agent = None
+        self._agent: CompiledStateGraph | None = None
         self._tools = [current_datetime]
-        {%- if cookiecutter.enable_web_search %}
-        self._tools.append(web_search_sync)
-        {%- endif %}
-        {%- if cookiecutter.enable_rag %}
+{%- if cookiecutter.enable_web_search %}
+        self._tools.append(web_search_tool)
+{%- endif %}
+{%- if cookiecutter.enable_rag %}
         self._tools.append(search_documents)
-        {%- endif %}
+{%- endif %}
 
-    def _create_agent(self):
+    def _create_agent(self) -> CompiledStateGraph:
         """Create and configure the LangChain agent."""
 {%- if cookiecutter.use_openai %}
         model = ChatOpenAI(
@@ -141,12 +192,18 @@ class LangChainAssistant:
             model=model,
             tools=self._tools,
             system_prompt=self.system_prompt,
+            context_schema=AgentContext,
+            middleware=[
+                ModelRetryMiddleware(max_retries=2),
+                ToolRetryMiddleware(max_retries=1),
+                ToolCallLimitMiddleware(run_limit=15),
+            ],
         )
 
         return agent
 
     @property
-    def agent(self):
+    def agent(self) -> CompiledStateGraph:
         """Get or create the agent instance."""
         if self._agent is None:
             self._agent = self._create_agent()
@@ -154,8 +211,7 @@ class LangChainAssistant:
 
     @staticmethod
     def _convert_history(
-        history
-        : list[dict[str, str]] | None
+        history: list[dict[str, str]] | None,
     ) -> list[HumanMessage | AIMessage | SystemMessage]:
         """Convert conversation history to LangChain message format."""
         messages: list[HumanMessage | AIMessage | SystemMessage] = []
@@ -193,10 +249,21 @@ class LangChainAssistant:
 
         logger.info(f"Running agent with user input: {user_input[:100]}...")
 
-        result = self.agent.invoke(
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        token = _active_kb_collections.set(agent_context.get("kb_collection_names") or [])
+        try:
+            result = await self.agent.ainvoke(
+                {"messages": messages},
+                config={"configurable": agent_context} if agent_context else None,
+            )
+        finally:
+            _active_kb_collections.reset(token)
+{%- else %}
+        result = await self.agent.ainvoke(
             {"messages": messages},
             config={"configurable": agent_context} if agent_context else None,
         )
+{%- endif %}
 
         # Extract the final response
         output = ""
@@ -235,21 +302,41 @@ class LangChainAssistant:
 
         agent_context: AgentContext = context if context is not None else {}
 
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        token = _active_kb_collections.set(agent_context.get("kb_collection_names") or [])
+        try:
+            async for event in self.agent.astream(
+                {"messages": messages},
+                stream_mode=["messages", "updates"],
+                config={"configurable": agent_context} if agent_context else None,
+            ):
+                yield event
+        finally:
+            _active_kb_collections.reset(token)
+{%- else %}
         async for event in self.agent.astream(
             {"messages": messages},
             stream_mode=["messages", "updates"],
             config={"configurable": agent_context} if agent_context else None,
         ):
             yield event
+{%- endif %}
 
 
-def get_agent() -> LangChainAssistant:
+def get_agent(
+    model_name: str | None = None,
+    thinking_effort: str | None = None,  # noqa: ARG001 — LangChain has no thinking concept
+) -> LangChainAssistant:
     """Factory function to create a LangChainAssistant.
+
+    Args:
+        model_name: Override the default AI model.
+        thinking_effort: Accepted for API parity with other agents; ignored.
 
     Returns:
         Configured LangChainAssistant instance.
     """
-    return LangChainAssistant()
+    return LangChainAssistant(model_name=model_name)
 
 
 async def run_agent(

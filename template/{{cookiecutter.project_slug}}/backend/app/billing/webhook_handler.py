@@ -85,7 +85,7 @@ class WebhookHandler:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def dispatch(self, event: stripe.Event) -> None:
+    async def dispatch(self, event: stripe.Event) -> None:
         existing = stripe_event_repo.get_by_stripe_id(self.db, event.id)
         if existing and existing.status in ("processed", "skipped"):
             logger.info("stripe_event_already_processed", extra={"event_id": event.id})
@@ -105,7 +105,7 @@ class WebhookHandler:
             return
 
         try:
-            handler(self.db, event)
+            await handler(self.db, event)
             stripe_event_repo.mark_processed(self.db, db_event=db_event)
         except Exception as exc:
             logger.exception("webhook_handler_failed", extra={"event_id": event.id})

@@ -50,7 +50,7 @@ def create_invitation(
 {%- if cookiecutter.use_postgresql %}
     invite = await service.invite(org_id, data.email, data.role, requester_id=user.id)
 {%- elif cookiecutter.use_sqlite %}
-    invite = service.invite(org_id, data.email, data.role, requester_id=str(user.id))
+    invite = await service.invite(org_id, data.email, data.role, requester_id=str(user.id))
 {%- else %}
     invite = await service.invite(org_id, data.email, data.role, requester_id=str(user.id))
 {%- endif %}

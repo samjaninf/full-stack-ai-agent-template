@@ -75,6 +75,7 @@
   "enable_conversation_persistence": true,
   "enable_langsmith": false,
   "enable_web_search": false,
+  "enable_web_fetch": false,
   "enable_webhooks": false,
   "websocket_auth": "jwt",
   "websocket_auth_jwt": true,

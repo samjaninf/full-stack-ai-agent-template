@@ -84,6 +84,46 @@ export interface CreditTransactionList {
   items: CreditTransactionRead[];
   total: number;
 }
+
+export type InvoiceStatus = "draft" | "open" | "paid" | "void" | "uncollectible";
+
+export interface InvoiceRead {
+  id: string;
+  number: string | null;
+  status: InvoiceStatus;
+  amount_due: number;
+  amount_paid: number;
+  currency: string;
+  period_start: string;
+  period_end: string;
+  invoice_pdf: string | null;
+  hosted_invoice_url: string | null;
+  created_at: string;
+}
+
+export interface InvoiceList {
+  items: InvoiceRead[];
+  total: number;
+}
+
+export interface PaymentMethodCard {
+  brand: string;
+  last4: string;
+  exp_month: number;
+  exp_year: number;
+}
+
+export interface PaymentMethodRead {
+  id: string;
+  type: string;
+  is_default: boolean;
+  card: PaymentMethodCard | null;
+  created_at: string;
+}
+
+export interface UpdateSeatsInput {
+  seats_quantity: number;
+}
 {% endraw %}
 {%- else %}
 export {};

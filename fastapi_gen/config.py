@@ -251,6 +251,7 @@ class ProjectConfig(BaseModel):
     enable_webhooks: bool = False
     enable_langsmith: bool = False
     enable_web_search: bool = False
+    enable_web_fetch: bool = False
     use_telegram: bool = False
     use_slack: bool = False
     enable_cors: bool = True
@@ -561,6 +562,7 @@ class ProjectConfig(BaseModel):
             "enable_conversation_persistence": True,
             "enable_langsmith": self.enable_langsmith,
             "enable_web_search": self.enable_web_search,
+            "enable_web_fetch": self.enable_web_fetch,
             "enable_webhooks": self.enable_webhooks,
             # Legacy fixed values (WebSocket always uses JWT)
             "websocket_auth": "jwt",

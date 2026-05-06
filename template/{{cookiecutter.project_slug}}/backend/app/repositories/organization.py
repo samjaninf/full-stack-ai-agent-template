@@ -145,6 +145,32 @@ async def update_billing(
     return db_org
 {%- endif %}
 
+{%- if cookiecutter.enable_credits_system %}
+
+
+async def get_with_low_credits(
+    db: AsyncSession, *, threshold: int
+) -> list[tuple[Organization, str, str]]:
+    """Return (org, owner_email, owner_name) for orgs with credits below threshold."""
+    from app.db.models.organization import OrganizationMember
+    from app.db.models.user import User
+
+    result = await db.execute(
+        select(Organization, User.email, User.full_name)
+        .join(
+            OrganizationMember,
+            (OrganizationMember.organization_id == Organization.id)
+            & (OrganizationMember.role == "owner"),
+        )
+        .join(User, User.id == OrganizationMember.user_id)
+        .where(
+            Organization.credits_balance >= 0,
+            Organization.credits_balance < threshold,
+        )
+    )
+    return [(row[0], row[1], row[2] or row[1]) for row in result.all()]
+{%- endif %}
+
 
 {%- elif cookiecutter.use_sqlite %}
 """Organization repository (SQLite sync)."""
@@ -285,6 +311,32 @@ def update_billing(
     return db_org
 {%- endif %}
 
+{%- if cookiecutter.enable_credits_system %}
+
+
+def get_with_low_credits(
+    db: Session, *, threshold: int
+) -> list[tuple[Organization, str, str]]:
+    """Return (org, owner_email, owner_name) for orgs with credits below threshold."""
+    from app.db.models.organization import OrganizationMember
+    from app.db.models.user import User
+
+    result = db.execute(
+        select(Organization, User.email, User.full_name)
+        .join(
+            OrganizationMember,
+            (OrganizationMember.organization_id == Organization.id)
+            & (OrganizationMember.role == "owner"),
+        )
+        .join(User, User.id == OrganizationMember.user_id)
+        .where(
+            Organization.credits_balance >= 0,
+            Organization.credits_balance < threshold,
+        )
+    )
+    return [(row[0], row[1], row[2] or row[1]) for row in result.all()]
+{%- endif %}
+
 
 {%- elif cookiecutter.use_mongodb %}
 """Organization repository (MongoDB)."""
@@ -365,6 +417,36 @@ async def create(
 
 async def delete(org: Organization) -> None:
     await org.delete()
+
+{%- if cookiecutter.enable_credits_system %}
+
+
+async def get_with_low_credits(
+    _db: Any, *, threshold: int
+) -> list[tuple["Organization", str, str]]:
+    """Return (org, owner_email, owner_name) for orgs with credits below threshold."""
+    from app.db.models.organization import OrganizationMember
+    from app.db.models.user import User
+
+    orgs = await Organization.find(
+        Organization.credits_balance >= 0,
+        Organization.credits_balance < threshold,
+    ).to_list()
+
+    result = []
+    for org in orgs:
+        member = await OrganizationMember.find_one(
+            OrganizationMember.organization_id == str(org.id),
+            OrganizationMember.role == "owner",
+        )
+        if not member:
+            continue
+        user = await User.get(member.user_id)
+        if not user:
+            continue
+        result.append((org, user.email, user.full_name or user.email))
+    return result
+{%- endif %}
 
 
 {%- else %}

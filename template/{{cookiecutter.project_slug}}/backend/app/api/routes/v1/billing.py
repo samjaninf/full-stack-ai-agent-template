@@ -18,6 +18,7 @@ from app.schemas.billing import (
     CreditBalanceRead,
     CreditTransactionList,
     UsageAggregateRead,
+    UsageTimelineRead,
 {%- endif %}
 )
 
@@ -314,6 +315,31 @@ def get_usage_aggregate(
     return usage_repo.aggregate_for_org(db, str(active_org.id))
 {%- endif %}
 
+
+
+@router.get("/me/credits/usage/timeline", response_model=UsageTimelineRead)
+{%- if cookiecutter.use_postgresql or cookiecutter.use_mongodb %}
+async def get_usage_timeline(
+    current_user: CurrentUser,
+    active_org: ActiveOrg,
+    db: DBSession,
+    days: int = Query(30, ge=7, le=365, description="Days of history to return"),
+) -> Any:
+    import app.repositories.usage_event as usage_repo
+    buckets = await usage_repo.daily_timeline(db, active_org.id, days=days)
+    return UsageTimelineRead(buckets=buckets, days=days)
+{%- else %}
+def get_usage_timeline(
+    current_user: CurrentUser,
+    active_org: ActiveOrg,
+    db: DBSession,
+    days: int = Query(30, ge=7, le=365, description="Days of history to return"),
+) -> Any:
+    import app.repositories.usage_event as usage_repo
+    buckets = usage_repo.daily_timeline(db, str(active_org.id), days=days)
+    return UsageTimelineRead(buckets=buckets, days=days)
+{%- endif %}
+
 {%- endif %}
 
 
@@ -343,7 +369,7 @@ async def stripe_webhook(
     stripe_signature: str = Header(..., alias="stripe-signature"),
 ) -> Any:
     payload = await request.body()
-    billing_service.handle_webhook_event(payload, stripe_signature)
+    await billing_service.handle_webhook_event(payload, stripe_signature)
     return {"received": True}
 {%- endif %}
 

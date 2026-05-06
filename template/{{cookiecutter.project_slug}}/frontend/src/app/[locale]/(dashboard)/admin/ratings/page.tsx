@@ -1,13 +1,9 @@
-"use client";
-
 {%- if cookiecutter.use_jwt %}
+"use client";
+{% raw %}
 import { useState, useEffect, useCallback } from "react";
-import { useTranslations } from "next-intl";
-import { useAuthStore } from "@/stores";
-import type {
-  MessageRatingListResponse,
-  RatingSummary,
-} from "@/types";
+import Link from "next/link";
+import { Download, ExternalLink, ThumbsUp, ThumbsDown } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -17,30 +13,44 @@ import {
   ResponsiveContainer,
   CartesianGrid,
 } from "recharts";
-import Link from "next/link";
-import { ExternalLink, Download } from "lucide-react";
-import { formatDate } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { apiClient } from "@/lib/api-client";
+import type { MessageRatingListResponse, RatingSummary } from "@/types";
 
 const PAGE_SIZE = 50;
 
 type RatingFilter = "all" | "positive" | "negative";
 
 export default function AdminRatingsPage() {
-  const t = useTranslations("admin");
-  const { user } = useAuthStore();
   const [summary, setSummary] = useState<RatingSummary | null>(null);
   const [ratings, setRatings] = useState<MessageRatingListResponse | null>(null);
   const [filter, setFilter] = useState<RatingFilter>("all");
   const [commentsOnly, setCommentsOnly] = useState(false);
   const [page, setPage] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [exportFormat, setExportFormat] = useState<"json" | "csv">("csv");
 
-  const fetchRatings = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const ratingsParams = new URLSearchParams({
         skip: String(page * PAGE_SIZE),
@@ -51,286 +61,254 @@ export default function AdminRatingsPage() {
         ratingsParams.set("rating_filter", filter === "positive" ? "1" : "-1");
       }
 
-      const [summaryRes, ratingsRes] = await Promise.all([
-        fetch("/api/v1/admin/ratings/summary?days=30", {
-          credentials: "include",
-        }),
-        fetch(`/api/v1/admin/ratings?${ratingsParams.toString()}`, {
-          credentials: "include",
-        }),
+      const [summaryData, ratingsData] = await Promise.all([
+        apiClient.get<RatingSummary>("/admin/ratings/summary?days=30"),
+        apiClient.get<MessageRatingListResponse>(`/admin/ratings?${ratingsParams}`),
       ]);
-
-      if (!summaryRes.ok && !ratingsRes.ok) {
-        throw new Error("Failed to fetch ratings data");
-      }
-
-      if (summaryRes.ok) {
-        const summaryData = await summaryRes.json();
-        setSummary(summaryData);
-      }
-      if (ratingsRes.ok) {
-        const ratingsData = await ratingsRes.json();
-        setRatings(ratingsData);
-      }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Failed to fetch ratings";
-      setError(errorMessage);
-      console.error(errorMessage);
+      setSummary(summaryData);
+      setRatings(ratingsData);
+    } catch {
+      /* ignore — errors shown via empty state */
     } finally {
       setLoading(false);
     }
   }, [page, filter, commentsOnly]);
 
-  const handleExport = () => {
-    const params = new URLSearchParams({
-      export_format: exportFormat,
-      rating_filter: filter === "all" ? "" : filter === "positive" ? "1" : "-1",
-      with_comments_only: commentsOnly.toString(),
-    });
-    // Remove empty params
-    if (!params.get("rating_filter")) params.delete("rating_filter");
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
-    // Note: window.open relies on the browser automatically sending cookies
-    // (httpOnly access_token) to the Next.js proxy route for authentication.
-    window.open(`/api/v1/admin/ratings/export?${params.toString()}`, "_blank");
+  const handleExport = () => {
+    const params = new URLSearchParams({ export_format: exportFormat });
+    if (filter !== "all") params.set("rating_filter", filter === "positive" ? "1" : "-1");
+    if (commentsOnly) params.set("with_comments_only", "true");
+    window.open(`/api/v1/admin/ratings/export?${params}`, "_blank");
   };
 
-  useEffect(() => {
-    if (user?.role !== "admin") return;
-
-    fetchRatings();
-  }, [user, fetchRatings]);
-
-  if (user?.role !== "admin") {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="text-center text-muted-foreground">{t("accessDenied")}</div>
-      </div>
-    );
-  }
-
-  if (loading && !summary && !error) {
-    return (
-      <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold mb-8">{t("ratingsTitle")}</h1>
-        {/* Summary Cards Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="bg-card p-4 rounded-lg border">
-              <Skeleton className="h-8 w-16 mb-2" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-          ))}
-        </div>
-        {/* Chart Skeleton */}
-        <div className="bg-card p-6 rounded-lg border mb-8">
-          <Skeleton className="h-6 w-40 mb-4" />
-          <Skeleton className="h-[300px] w-full" />
-        </div>
-        {/* Table Skeleton */}
-        <div className="bg-card rounded-lg border">
-          <div className="p-4 border-b">
-            <Skeleton className="h-10 w-32" />
-          </div>
-          <div className="p-4 space-y-4">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <Skeleton key={i} className="h-16 w-full" />
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error && !summary) {
-    return (
-      <div className="container mx-auto py-8">
-        <div className="text-center text-red-500">{error}</div>
-      </div>
-    );
-  }
+  const totalPages = ratings ? Math.ceil(ratings.total / PAGE_SIZE) : 0;
 
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-8">{t("ratingsTitle")}</h1>
-
-      {/* Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-card p-4 rounded-lg border">
-            <div className="text-2xl font-bold">{summary.total_ratings}</div>
-            <div className="text-sm text-muted-foreground">{t("totalRatings")}</div>
-          </div>
-          <div className="bg-card p-4 rounded-lg border">
-            <div className="text-2xl font-bold text-green-600">
-              {summary.like_count}
-            </div>
-            <div className="text-sm text-muted-foreground">{t("likes")}</div>
-          </div>
-          <div className="bg-card p-4 rounded-lg border">
-            <div className="text-2xl font-bold text-red-600">
-              {summary.dislike_count}
-            </div>
-            <div className="text-sm text-muted-foreground">{t("dislikes")}</div>
-          </div>
-          <div className="bg-card p-4 rounded-lg border">
-            <div className="text-2xl font-bold">
-              {summary.average_rating.toFixed(2)}
-            </div>
-            <div className="text-sm text-muted-foreground">{t("averageRating")}</div>
-          </div>
+    <div className="space-y-6 p-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">Response Ratings</h1>
+          <p className="text-sm text-muted-foreground">
+            Message quality feedback from users over the last 30 days.
+          </p>
         </div>
-      )}
+        <div className="flex items-center gap-2">
+          <Select value={exportFormat} onValueChange={(v) => setExportFormat(v as "json" | "csv")}>
+            <SelectTrigger className="w-24">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="csv">CSV</SelectItem>
+              <SelectItem value="json">JSON</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={handleExport}>
+            <Download className="mr-2 h-4 w-4" />
+            Export
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary cards */}
+      {loading && !summary ? (
+        <div className="grid gap-4 sm:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-24 w-full" />
+          ))}
+        </div>
+      ) : summary ? (
+        <div className="grid gap-4 sm:grid-cols-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Total Ratings</CardDescription>
+              <CardTitle className="text-3xl tabular-nums">{summary.total_ratings}</CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Likes</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-3xl tabular-nums text-green-600">
+                <ThumbsUp className="h-5 w-5" />
+                {summary.like_count}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Dislikes</CardDescription>
+              <CardTitle className="flex items-center gap-2 text-3xl tabular-nums text-destructive">
+                <ThumbsDown className="h-5 w-5" />
+                {summary.dislike_count}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardDescription>Average Rating</CardDescription>
+              <CardTitle className="text-3xl tabular-nums">
+                {summary.average_rating.toFixed(2)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      ) : null}
 
       {/* Chart */}
       {summary && summary.ratings_by_day.length > 0 && (
-        <div className="bg-card p-6 rounded-lg border mb-8">
-          <h2 className="text-xl font-semibold mb-4">{t("ratingsOverTime")}</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={summary.ratings_by_day}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="likes" fill="#22c55e" name="Likes" />
-              <Bar dataKey="dislikes" fill="#ef4444" name="Dislikes" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">Ratings Over Time</CardTitle>
+            <CardDescription>Daily like/dislike counts.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={260}>
+              <BarChart data={summary.ratings_by_day} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                <XAxis dataKey="date" tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+                <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+                <Tooltip
+                  contentStyle={{
+                    background: "hsl(var(--popover))",
+                    border: "1px solid hsl(var(--border))",
+                    borderRadius: "6px",
+                  }}
+                />
+                <Bar dataKey="likes" fill="#22c55e" name="Likes" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="dislikes" fill="hsl(var(--destructive))" name="Dislikes" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       )}
 
       {/* Filters */}
-      <div className="flex items-center gap-4 mb-4">
-        <select
-          value={filter}
-          onChange={(e) => setFilter(e.target.value as RatingFilter)}
-          className="px-3 py-2 rounded-md border bg-background"
-        >
-          <option value="all">{t("allRatings")}</option>
-          <option value="positive">{t("likesOnly")}</option>
-          <option value="negative">{t("dislikesOnly")}</option>
-        </select>
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
+      <div className="flex items-center gap-4">
+        <Select value={filter} onValueChange={(v) => { setFilter(v as RatingFilter); setPage(0); }}>
+          <SelectTrigger className="w-40">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Ratings</SelectItem>
+            <SelectItem value="positive">Likes Only</SelectItem>
+            <SelectItem value="negative">Dislikes Only</SelectItem>
+          </SelectContent>
+        </Select>
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
             checked={commentsOnly}
-            onChange={(e) => setCommentsOnly(e.target.checked)}
-            className="rounded"
+            onCheckedChange={(v) => { setCommentsOnly(!!v); setPage(0); }}
           />
-          {t("withCommentsOnly")}
+          With comments only
         </label>
-        <div className="flex items-center gap-2 ml-auto">
-          <select
-            value={exportFormat}
-            onChange={(e) => setExportFormat(e.target.value as "json" | "csv")}
-            className="px-3 py-2 rounded-md border bg-background"
-          >
-            <option value="csv">CSV</option>
-            <option value="json">JSON</option>
-          </select>
-          <button
-            onClick={handleExport}
-            className="inline-flex items-center gap-2 px-3 py-2 rounded-md bg-primary text-primary-foreground hover:bg-primary/90"
-          >
-            <Download className="h-4 w-4" />
-            {t("export")}
-          </button>
-        </div>
       </div>
 
-      {/* Ratings List */}
-      <div className="bg-card rounded-lg border">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b">
-              <th className="text-left p-4">{t("date")}</th>
-              <th className="text-left p-4">{t("rating")}</th>
-              <th className="text-left p-4">{t("comment")}</th>
-              <th className="text-left p-4">{t("message")}</th>
-              <th className="text-left p-4">{t("user")}</th>
-              <th className="text-left p-4">{t("actions")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {ratings?.items.map((rating) => (
-              <tr key={rating.id} className="border-b hover:bg-muted/50">
-                <td className="p-4">{formatDate(rating.created_at)}</td>
-                <td className="p-4">
-                  {rating.rating === 1 ? (
-                    <span className="text-green-600">👍 Like</span>
-                  ) : (
-                    <span className="text-red-600">👎 Dislike</span>
-                  )}
-                </td>
-                <td className="p-4 max-w-md truncate">
-                  {rating.comment || "-"}
-                </td>
-                <td className="p-4 max-w-xs truncate text-muted-foreground">
-                  {rating.message_content || "-"}
-                </td>
-                <td className="p-4">
-                  {rating.user_name || rating.user_email || "-"}
-                </td>
-                <td className="p-4">
-                  {rating.conversation_id && (
-                    <Link
-                      href={`/chat?id=${rating.conversation_id}`}
-                      className="inline-flex items-center gap-1 text-sm text-primary hover:underline"
-                    >
-                      {t("viewConversation")}
-                      <ExternalLink className="h-3 w-3" />
-                    </Link>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {loading && ratings && (
-              <tr>
-                <td colSpan={6} className="p-4">
-                  <div className="flex justify-center">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
-                  </div>
-                </td>
-              </tr>
+      {/* Ratings table */}
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Date</TableHead>
+              <TableHead>Rating</TableHead>
+              <TableHead>Comment</TableHead>
+              <TableHead>Message</TableHead>
+              <TableHead>User</TableHead>
+              <TableHead />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading
+              ? Array.from({ length: 8 }).map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={6}>
+                      <Skeleton className="h-8 w-full" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              : ratings?.items.map((rating) => (
+                  <TableRow key={rating.id}>
+                    <TableCell className="text-sm text-muted-foreground whitespace-nowrap">
+                      {new Date(rating.created_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell>
+                      {rating.rating === 1 ? (
+                        <Badge variant="default" className="bg-green-600">
+                          <ThumbsUp className="mr-1 h-3 w-3" />
+                          Like
+                        </Badge>
+                      ) : (
+                        <Badge variant="destructive">
+                          <ThumbsDown className="mr-1 h-3 w-3" />
+                          Dislike
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate text-sm">
+                      {rating.comment || <span className="text-muted-foreground">—</span>}
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate text-sm text-muted-foreground">
+                      {rating.message_content || "—"}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {rating.user_name || rating.user_email || "—"}
+                    </TableCell>
+                    <TableCell>
+                      {rating.conversation_id && (
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link href={`/chat?id=${rating.conversation_id}`}>
+                            <ExternalLink className="mr-1 h-3 w-3" />
+                            View
+                          </Link>
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+            {!loading && ratings?.items.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                  No ratings found.
+                </TableCell>
+              </TableRow>
             )}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
+      </div>
 
-        {/* Pagination */}
-        {ratings && ratings.total > PAGE_SIZE && (
-          <div className="flex justify-center gap-2 p-4 border-t">
-            <button
-              onClick={() => setPage(Math.max(0, page - 1))}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">
+            Page {page + 1} of {totalPages} &middot; {ratings?.total} total
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
               disabled={page === 0}
-              className="px-3 py-1 rounded hover:bg-muted disabled:opacity-50"
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
             >
               Previous
-            </button>
-            <span className="px-3 py-1">
-              Page {page + 1} of {Math.ceil(ratings.total / PAGE_SIZE)}
-            </span>
-            <button
-              onClick={() => setPage(Math.min(Math.ceil(ratings.total / PAGE_SIZE) - 1, page + 1))}
-              disabled={page >= Math.ceil(ratings.total / PAGE_SIZE) - 1}
-              className="px-3 py-1 rounded hover:bg-muted disabled:opacity-50"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page >= totalPages - 1}
+              onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
             >
               Next
-            </button>
+            </Button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
+{% endraw %}
 {%- else %}
-// Admin ratings page placeholder - JWT not enabled
 export default function AdminRatingsPage() {
-  return (
-    <div className="container mx-auto py-8">
-      <div className="text-center text-muted-foreground">
-        Authentication not enabled
-      </div>
-    </div>
-  );
+  return null;
 }
 {%- endif %}

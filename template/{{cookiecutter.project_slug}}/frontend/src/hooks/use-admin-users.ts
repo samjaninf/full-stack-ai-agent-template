@@ -5,7 +5,7 @@ import { useCallback, useState } from "react";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 
-export interface AdminAdminUserRead {
+export interface AdminUserRead {
   id: string;
   email: string;
   full_name: string | null;

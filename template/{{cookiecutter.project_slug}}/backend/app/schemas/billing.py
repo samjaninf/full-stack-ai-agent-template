@@ -170,12 +170,37 @@ class UsageEventRead(BaseSchema, TimestampSchema):
     ai_framework: str
 
 
+class UsageByModelRead(BaseSchema):
+    model: str
+    provider: str
+    input_tokens: int
+    output_tokens: int
+    cached_tokens: int
+    credits_charged: int
+    total_calls: int
+
+
 class UsageAggregateRead(BaseSchema):
     total_input_tokens: int
     total_output_tokens: int
     total_cached_tokens: int
     total_credits_charged: int
     total_calls: int
+    by_model: list[UsageByModelRead] = Field(default_factory=list)
+
+
+class UsageDailyBucket(BaseSchema):
+    day: str
+    input_tokens: int
+    output_tokens: int
+    cached_tokens: int
+    credits_charged: int
+    total_calls: int
+
+
+class UsageTimelineRead(BaseSchema):
+    buckets: list[UsageDailyBucket]
+    days: int
 
 {%- endif %}
 {%- else %}

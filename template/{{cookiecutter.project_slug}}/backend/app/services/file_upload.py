@@ -10,6 +10,7 @@ from typing import Any
 {%- if cookiecutter.use_all_pdf_parsers or cookiecutter.use_llamaparse %}
 import os
 import tempfile
+from app.core.config import settings
 {%- endif %}
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -108,7 +109,6 @@ class FileUploadService:
         """Extract text from PDF using LlamaParse."""
         try:
             from llama_cloud import AsyncLlamaCloud
-            from app.core.config import settings
 
             if not settings.LLAMAPARSE_API_KEY:
                 logger.warning("LLAMAPARSE_API_KEY not set, falling back to PyMuPDF")
@@ -154,7 +154,6 @@ class FileUploadService:
 
     async def _parse_pdf_content(self, data: bytes) -> str | None:
         """Parse PDF using the parser selected by CHAT_PDF_PARSER env var."""
-        from app.core.config import settings
 
         parser = getattr(settings, "CHAT_PDF_PARSER", "pymupdf")
         if parser == "llamaparse":
@@ -272,8 +271,11 @@ creation. Moves parsing helpers and file classification out of the route layer.
 import logging
 from typing import Any
 {%- if cookiecutter.use_all_pdf_parsers or cookiecutter.use_llamaparse %}
+import asyncio
 import os
 import tempfile
+from concurrent.futures import ThreadPoolExecutor
+from app.core.config import settings
 {%- endif %}
 
 from sqlalchemy.orm import Session
@@ -371,8 +373,6 @@ class FileUploadService:
     def _parse_pdf_llamaparse(self, data: bytes) -> str | None:
         """Extract text from PDF using LlamaParse."""
         try:
-            import asyncio
-            from app.core.config import settings
 
             if not settings.LLAMAPARSE_API_KEY:
                 logger.warning("LLAMAPARSE_API_KEY not set, falling back to PyMuPDF")
@@ -391,7 +391,8 @@ class FileUploadService:
                         )
                     return "\n\n".join(p.markdown for p in result.pages) if result.pages else None
 
-                return asyncio.run(_parse())
+                with ThreadPoolExecutor(max_workers=1) as pool:
+                    return pool.submit(asyncio.run, _parse()).result()
             finally:
                 os.unlink(temp_path)
         except Exception as e:
@@ -422,7 +423,6 @@ class FileUploadService:
 
     def _parse_pdf_content(self, data: bytes) -> str | None:
         """Parse PDF using the parser selected by CHAT_PDF_PARSER env var."""
-        from app.core.config import settings
 
         parser = getattr(settings, "CHAT_PDF_PARSER", "pymupdf")
         if parser == "llamaparse":

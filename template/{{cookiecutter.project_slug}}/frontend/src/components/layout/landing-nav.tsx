@@ -30,6 +30,14 @@ export function LandingNav({ signInLabel, getStartedLabel, dashboardLabel }: Lan
         </Link>
 
         <div className="flex items-center gap-1.5 sm:gap-2">
+{%- if cookiecutter.enable_billing %}
+          <Link
+            href={ROUTES.PRICING}
+            className="hidden rounded-full px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-foreground sm:inline-flex"
+          >
+            Pricing
+          </Link>
+{%- endif %}
           <LanguageSwitcherCompact />
           <ThemeToggle />
 

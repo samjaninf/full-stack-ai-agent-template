@@ -668,6 +668,38 @@ def prompt_llm_provider(ai_framework: AIFrameworkType) -> LLMProviderType:
     )
 
 
+def prompt_pydantic_capabilities() -> tuple[bool, bool]:
+    """Prompt for PydanticAI built-in capabilities (WebSearch, WebFetch).
+
+    Returns:
+        Tuple of (enable_web_search, enable_web_fetch).
+    """
+    console.print()
+    console.print("[bold cyan]PydanticAI Capabilities[/]")
+    console.print("Built-in model capabilities (model must support them).")
+    console.print()
+
+    enable_web_search = cast(
+        bool,
+        _check_cancelled(
+            questionary.confirm(
+                "Enable WebSearch capability (model-native web search)?",
+                default=False,
+            ).ask()
+        ),
+    )
+    enable_web_fetch = cast(
+        bool,
+        _check_cancelled(
+            questionary.confirm(
+                "Enable WebFetch capability (model-native URL fetching)?",
+                default=False,
+            ).ask()
+        ),
+    )
+    return enable_web_search, enable_web_fetch
+
+
 def prompt_langsmith() -> bool:
     """Prompt for LangSmith observability."""
     return cast(
@@ -1189,6 +1221,8 @@ def run_interactive_prompts() -> ProjectConfig:
 
     # AI framework, LLM provider
     enable_langsmith = False
+    enable_web_search = False
+    enable_web_fetch = False
     rag_features = RAGFeatures()
 
     ai_framework = prompt_ai_framework()
@@ -1199,6 +1233,10 @@ def run_interactive_prompts() -> ProjectConfig:
         sandbox_backend = prompt_sandbox_backend(ai_framework)
 
     llm_provider = prompt_llm_provider(ai_framework)
+
+    # PydanticAI built-in capabilities (WebSearch, WebFetch)
+    if ai_framework == AIFrameworkType.PYDANTIC_AI:
+        enable_web_search, enable_web_fetch = prompt_pydantic_capabilities()
 
     # RAG Logic
     rag_features = prompt_rag_config()
@@ -1259,6 +1297,8 @@ def run_interactive_prompts() -> ProjectConfig:
         llm_provider=llm_provider,
         rag_features=rag_features,
         enable_langsmith=enable_langsmith,
+        enable_web_search=enable_web_search,
+        enable_web_fetch=enable_web_fetch,
         use_telegram=use_telegram,
         use_slack=use_slack,
         rate_limit_requests=rate_limit_requests,

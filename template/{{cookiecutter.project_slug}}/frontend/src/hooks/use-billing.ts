@@ -12,6 +12,8 @@ import type {
   CreditBalanceRead,
   CreditTransactionList,
   PlanRead,
+  InvoiceList,
+  InvoiceRead,
 } from "@/types";
 
 export function useBilling() {
@@ -82,11 +84,44 @@ export function useSubscription() {
     }
   }, [fetchSubscription]);
 
+  const updateSeats = useCallback(async (seats: number) => {
+    try {
+      await apiClient.patch("/billing/me/subscription", { seats_quantity: seats });
+      toast.success("Seats updated.");
+      await fetchSubscription();
+    } catch {
+      toast.error("Failed to update seats");
+    }
+  }, [fetchSubscription]);
+
   useEffect(() => {
     fetchSubscription();
   }, [fetchSubscription]);
 
-  return { subscription, isLoading, error, fetchSubscription, cancelSubscription, reactivateSubscription };
+  return { subscription, isLoading, error, fetchSubscription, cancelSubscription, reactivateSubscription, updateSeats };
+}
+
+export function useInvoices() {
+  const [invoices, setInvoices] = useState<InvoiceRead[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const fetchInvoices = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await apiClient.get<InvoiceList>("/billing/me/invoices");
+      setInvoices(data.items);
+    } catch {
+      setInvoices([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchInvoices();
+  }, [fetchInvoices]);
+
+  return { invoices, isLoading, fetchInvoices };
 }
 
 export function useCredits() {
