@@ -16,8 +16,8 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.repositories.usage_event as usage_repo
-from app.billing.credit_service import CreditService
-from app.billing.pricing import usage_to_credits
+from app.services.billing.credit_service import CreditService
+from app.services.billing.pricing import usage_to_credits
 from app.core.config import settings
 
 
@@ -92,8 +92,8 @@ class UsageService:
 from sqlalchemy.orm import Session
 
 import app.repositories.usage_event as usage_repo
-from app.billing.credit_service import CreditService
-from app.billing.pricing import usage_to_credits
+from app.services.billing.credit_service import CreditService
+from app.services.billing.pricing import usage_to_credits
 from app.core.config import settings
 
 
@@ -154,8 +154,8 @@ class UsageService:
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 import app.repositories.usage_event as usage_repo
-from app.billing.credit_service import CreditService
-from app.billing.pricing import usage_to_credits
+from app.services.billing.credit_service import CreditService
+from app.services.billing.pricing import usage_to_credits
 from app.core.config import settings
 
 

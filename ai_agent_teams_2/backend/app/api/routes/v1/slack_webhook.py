@@ -8,8 +8,8 @@ from uuid import UUID
 from fastapi import APIRouter, HTTPException, Request, Response
 
 from app.api.deps import ChannelBotSvc
-from app.channels import get_adapter
 from app.core.config import settings
+from app.services.channels import get_adapter
 from app.worker.background.channel import process_channel_event
 
 logger = logging.getLogger(__name__)

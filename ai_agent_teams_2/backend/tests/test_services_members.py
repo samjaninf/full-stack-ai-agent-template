@@ -160,13 +160,13 @@ class TestMemberService:
         mock_requester = MagicMock()
         mock_requester.role = "admin"
 
-        with patch(
-            "app.services.member.member_repo.get", new=AsyncMock(return_value=mock_requester)
+        with (
+            patch(
+                "app.services.member.member_repo.get", new=AsyncMock(return_value=mock_requester)
+            ),
+            pytest.raises(AuthorizationError),
         ):
-            with pytest.raises(AuthorizationError):
-                await service.transfer_ownership(
-                    uuid.uuid4(), uuid.uuid4(), requester_id=uuid.uuid4()
-                )
+            await service.transfer_ownership(uuid.uuid4(), uuid.uuid4(), requester_id=uuid.uuid4())
 
     @pytest.mark.anyio
     async def test_transfer_ownership_to_self_raises(self, service):
@@ -178,11 +178,13 @@ class TestMemberService:
         mock_requester = MagicMock()
         mock_requester.role = "owner"
 
-        with patch(
-            "app.services.member.member_repo.get", new=AsyncMock(return_value=mock_requester)
+        with (
+            patch(
+                "app.services.member.member_repo.get", new=AsyncMock(return_value=mock_requester)
+            ),
+            pytest.raises(BadRequestError),
         ):
-            with pytest.raises(BadRequestError):
-                await service.transfer_ownership(uuid.uuid4(), uid, requester_id=uid)
+            await service.transfer_ownership(uuid.uuid4(), uid, requester_id=uid)
 
 
 class TestInvitationService:
@@ -212,13 +214,15 @@ class TestInvitationService:
         mock_member = MagicMock()
         mock_member.role = "member"
 
-        with patch(
-            "app.services.invitation.member_repo.get", new=AsyncMock(return_value=mock_member)
+        with (
+            patch(
+                "app.services.invitation.member_repo.get", new=AsyncMock(return_value=mock_member)
+            ),
+            pytest.raises(AuthorizationError),
         ):
-            with pytest.raises(AuthorizationError):
-                await service.invite(
-                    uuid.uuid4(), "user@example.com", "member", requester_id=uuid.uuid4()
-                )
+            await service.invite(
+                uuid.uuid4(), "user@example.com", "member", requester_id=uuid.uuid4()
+            )
 
     @pytest.mark.anyio
     async def test_invite_admin_cannot_invite_as_admin(self, service):
@@ -229,13 +233,16 @@ class TestInvitationService:
         mock_requester = MagicMock()
         mock_requester.role = "admin"
 
-        with patch(
-            "app.services.invitation.member_repo.get", new=AsyncMock(return_value=mock_requester)
+        with (
+            patch(
+                "app.services.invitation.member_repo.get",
+                new=AsyncMock(return_value=mock_requester),
+            ),
+            pytest.raises(AuthorizationError),
         ):
-            with pytest.raises(AuthorizationError):
-                await service.invite(
-                    uuid.uuid4(), "user@example.com", "admin", requester_id=uuid.uuid4()
-                )
+            await service.invite(
+                uuid.uuid4(), "user@example.com", "admin", requester_id=uuid.uuid4()
+            )
 
     @pytest.mark.anyio
     async def test_invite_raises_on_duplicate_pending(self, service):
@@ -259,11 +266,11 @@ class TestInvitationService:
                 "app.services.invitation.invitation_repo.get_pending_for_org_email",
                 new=AsyncMock(return_value=mock_pending),
             ),
+            pytest.raises(AlreadyExistsError),
         ):
-            with pytest.raises(AlreadyExistsError):
-                await service.invite(
-                    uuid.uuid4(), "user@example.com", "member", requester_id=uuid.uuid4()
-                )
+            await service.invite(
+                uuid.uuid4(), "user@example.com", "member", requester_id=uuid.uuid4()
+            )
 
     @pytest.mark.anyio
     async def test_accept_raises_on_missing_token(self, service):
@@ -271,11 +278,14 @@ class TestInvitationService:
 
         from app.core.exceptions import NotFoundError
 
-        with patch(
-            "app.services.invitation.invitation_repo.get_by_token", new=AsyncMock(return_value=None)
+        with (
+            patch(
+                "app.services.invitation.invitation_repo.get_by_token",
+                new=AsyncMock(return_value=None),
+            ),
+            pytest.raises(NotFoundError),
         ):
-            with pytest.raises(NotFoundError):
-                await service.accept("bad-token", accepting_user_id=uuid.uuid4())
+            await service.accept("bad-token", accepting_user_id=uuid.uuid4())
 
     @pytest.mark.anyio
     async def test_accept_raises_on_non_pending_invite(self, service):
@@ -286,12 +296,14 @@ class TestInvitationService:
         mock_invite = MagicMock()
         mock_invite.status = "accepted"
 
-        with patch(
-            "app.services.invitation.invitation_repo.get_by_token",
-            new=AsyncMock(return_value=mock_invite),
+        with (
+            patch(
+                "app.services.invitation.invitation_repo.get_by_token",
+                new=AsyncMock(return_value=mock_invite),
+            ),
+            pytest.raises(BadRequestError),
         ):
-            with pytest.raises(BadRequestError):
-                await service.accept("some-token", accepting_user_id=uuid.uuid4())
+            await service.accept("some-token", accepting_user_id=uuid.uuid4())
 
     @pytest.mark.anyio
     async def test_revoke_raises_if_not_pending(self, service):
@@ -302,9 +314,11 @@ class TestInvitationService:
         mock_invite = MagicMock()
         mock_invite.status = "expired"
 
-        with patch(
-            "app.services.invitation.invitation_repo.get_by_token",
-            new=AsyncMock(return_value=mock_invite),
+        with (
+            patch(
+                "app.services.invitation.invitation_repo.get_by_token",
+                new=AsyncMock(return_value=mock_invite),
+            ),
+            pytest.raises(BadRequestError),
         ):
-            with pytest.raises(BadRequestError):
-                await service.revoke("some-token", requester_id=uuid.uuid4())
+            await service.revoke("some-token", requester_id=uuid.uuid4())

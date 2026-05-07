@@ -28,17 +28,17 @@ from app.core.middleware import RequestIDMiddleware
 from app.clients.redis import RedisClient
 {%- endif %}
 {%- if cookiecutter.enable_rag %}
-from app.rag.embeddings import EmbeddingService
+from app.services.rag.embeddings import EmbeddingService
 {%- if cookiecutter.use_milvus %}
-from app.rag.vectorstore import MilvusVectorStore
+from app.services.rag.vectorstore import MilvusVectorStore
 {%- elif cookiecutter.use_qdrant %}
-from app.rag.vectorstore import QdrantVectorStore
+from app.services.rag.vectorstore import QdrantVectorStore
 {%- elif cookiecutter.use_chromadb %}
-from app.rag.vectorstore import ChromaVectorStore
+from app.services.rag.vectorstore import ChromaVectorStore
 {%- elif cookiecutter.use_pgvector %}
-from app.rag.vectorstore import PgVectorStore
+from app.services.rag.vectorstore import PgVectorStore
 {%- endif %}
-from app.rag.vectorstore import BaseVectorStore
+from app.services.rag.vectorstore import BaseVectorStore
 {%- endif %}
 {%- endif %}
 
@@ -121,7 +121,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[{% if cookiecutter.enable_red
 {%- if cookiecutter.enable_reranker %}
     # Initialize and warmup reranker (downloads model or validates API key)
     try:
-        from app.rag.reranker import RerankService
+        from app.services.rag.reranker import RerankService
         rerank_service = RerankService(settings=settings.rag)
         rerank_service.warmup()
         state["rerank_service"] = rerank_service
@@ -168,8 +168,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[{% if cookiecutter.enable_red
 {%- if cookiecutter.use_telegram %}
 
     # === Telegram Channel Polling ===
-    from app.channels import register_adapter
-    from app.channels.telegram import TelegramAdapter
+    from app.services.channels import register_adapter
+    from app.services.channels.telegram import TelegramAdapter
     from app.core.channel_crypto import decrypt_token
     _telegram_adapter = TelegramAdapter()
     register_adapter(_telegram_adapter)
@@ -200,8 +200,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[{% if cookiecutter.enable_red
 {%- if cookiecutter.use_slack %}
 
     # === Slack Adapter (Socket Mode polling for dev, Events API for prod) ===
-    from app.channels import register_adapter as _slack_register
-    from app.channels.slack import SlackAdapter
+    from app.services.channels import register_adapter as _slack_register
+    from app.services.channels.slack import SlackAdapter
     from app.core.channel_crypto import decrypt_token as _slack_decrypt
     _slack_adapter = SlackAdapter()
     _slack_register(_slack_adapter)

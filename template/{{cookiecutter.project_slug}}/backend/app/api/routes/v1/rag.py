@@ -32,7 +32,7 @@ from app.api.deps import RAGStatusSvc
 {%- endif %}
 from app.core.config import settings
 from app.core.exceptions import NotFoundError
-from app.rag.config import get_supported_formats
+from app.services.rag.config import get_supported_formats
 from app.schemas.rag import (
     RAGCollectionInfo,
     RAGCollectionList,

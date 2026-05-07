@@ -268,7 +268,7 @@ class Settings(BaseSettings):
     @property
     def rag(self) -> "RAGSettings":
         """Build RAG-specific settings."""
-        from app.rag.config import RAGSettings, DocumentParser, PdfParser, EmbeddingsConfig
+        from app.services.rag.config import RAGSettings, DocumentParser, PdfParser, EmbeddingsConfig
 
         pdf_parser = PdfParser(
             method=self.PDF_PARSER,
@@ -292,7 +292,7 @@ class Settings(BaseSettings):
 
 
 # Rebuild Settings to resolve RAGSettings forward reference
-from app.rag.config import RAGSettings
+from app.services.rag.config import RAGSettings
 
 Settings.model_rebuild()
 

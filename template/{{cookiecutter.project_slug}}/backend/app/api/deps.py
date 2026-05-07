@@ -955,20 +955,20 @@ ValidAPIKey = Annotated[str, Depends(verify_api_key)]
 
 # === RAG Service Dependencies ===
 
-from app.rag.embeddings import EmbeddingService
-from app.rag.ingestion import IngestionService
-from app.rag.documents import DocumentProcessor
+from app.services.rag.embeddings import EmbeddingService
+from app.services.rag.ingestion import IngestionService
+from app.services.rag.documents import DocumentProcessor
 from fastapi import Request
 from app.core.config import settings
-from app.rag.retrieval import RetrievalService
+from app.services.rag.retrieval import RetrievalService
 {%- if cookiecutter.use_milvus %}
-from app.rag.vectorstore import MilvusVectorStore
+from app.services.rag.vectorstore import MilvusVectorStore
 {%- elif cookiecutter.use_qdrant %}
-from app.rag.vectorstore import QdrantVectorStore
+from app.services.rag.vectorstore import QdrantVectorStore
 {%- elif cookiecutter.use_chromadb %}
-from app.rag.vectorstore import ChromaVectorStore
+from app.services.rag.vectorstore import ChromaVectorStore
 {%- elif cookiecutter.use_pgvector %}
-from app.rag.vectorstore import PgVectorStore
+from app.services.rag.vectorstore import PgVectorStore
 {%- endif %}
 
 def get_embedding_service(request: Request) -> EmbeddingService:
@@ -980,7 +980,7 @@ def get_embedding_service(request: Request) -> EmbeddingService:
 # Type Alias for the Embedder
 EmbeddingSvc = Annotated[EmbeddingService, Depends(get_embedding_service)]
 
-from app.rag.vectorstore import BaseVectorStore
+from app.services.rag.vectorstore import BaseVectorStore
 
 def get_vectorstore(request: Request, embedder: EmbeddingSvc) -> BaseVectorStore:
     """Get vector store client from lifespan state or create new."""
@@ -1001,7 +1001,7 @@ VectorStoreSvc = Annotated[BaseVectorStore, Depends(get_vectorstore)]
 def get_retrieval_service(vector_store: VectorStoreSvc) -> RetrievalService:
     """Create RetrievalService instance."""
     {%- if cookiecutter.enable_reranker %}
-    from app.rag.reranker import RerankService
+    from app.services.rag.reranker import RerankService
     rerank_service = RerankService(settings=settings.rag)
     return RetrievalService(
         vector_store=vector_store,

@@ -9,13 +9,13 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.channels import get_adapter
 from app.core.channel_crypto import decrypt_token, encrypt_token
 from app.core.config import settings
 from app.core.exceptions import NotFoundError
 from app.db.models.channel_bot import ChannelBot
 from app.repositories import channel_bot_repo, channel_session_repo
 from app.schemas.channel_bot import ChannelBotCreate, ChannelBotUpdate
+from app.services.channels import get_adapter
 
 logger = logging.getLogger(__name__)
 

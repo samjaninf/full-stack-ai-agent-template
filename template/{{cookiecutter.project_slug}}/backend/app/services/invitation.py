@@ -90,7 +90,7 @@ class InvitationService:
         )
 {%- if cookiecutter.enable_email %}
         try:
-            from app.email.service import get_email_service
+            from app.services.email.service import get_email_service
             from app.repositories import user_repo as _user_repo
             org = await organization_repo.get_by_id(self.db, organization_id)
             requester_user = await _user_repo.get_by_id(self.db, requester_id)
@@ -296,7 +296,7 @@ class InvitationService:
         )
 {%- if cookiecutter.enable_email %}
         try:
-            from app.email.service import get_email_service
+            from app.services.email.service import get_email_service
             from app.repositories import organization_repo, user_repo as _user_repo
             org = organization_repo.get_by_id(self.db, organization_id)
             requester_user = _user_repo.get_by_id(self.db, requester_id)
@@ -465,7 +465,7 @@ class InvitationService:
         )
 {%- if cookiecutter.enable_email %}
         try:
-            from app.email.service import get_email_service
+            from app.services.email.service import get_email_service
             from app.repositories import organization_repo as _org_repo
             from app.repositories import user_repo as _user_repo
             org = await _org_repo.get_by_id(organization_id)

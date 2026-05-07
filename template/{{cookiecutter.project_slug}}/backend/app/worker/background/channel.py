@@ -8,7 +8,7 @@ gets a fast 200 OK while routing/AI happens in the background.
 import logging
 from typing import Any
 
-from app.channels.router import ChannelMessageRouter
+from app.services.channels.router import ChannelMessageRouter
 {%- if cookiecutter.use_postgresql %}
 from app.db.session import get_db_context
 {%- elif cookiecutter.use_sqlite %}

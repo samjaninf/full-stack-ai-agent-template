@@ -339,10 +339,10 @@ class PydanticDeepAssistant:
         Yields:
             Tuples of ("messages", (chunk, metadata)) for LLM tokens.
         """
-        agent_context: PydanticDeepContext = context if context is not None else {}
         logger.info("Streaming PydanticDeep agent: %s…", user_input[:100])
 
 {%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+        agent_context: PydanticDeepContext = context if context is not None else {}
         token = _active_kb_collections.set(agent_context.get("kb_collection_names") or [])
         try:
             async with self.agent.run_stream(user_input, deps=self.deps) as response:

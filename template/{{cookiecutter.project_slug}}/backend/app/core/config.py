@@ -556,7 +556,7 @@ class Settings(BaseSettings):
     @property
     def rag(self) -> "RAGSettings":
         """Build RAG-specific settings."""
-        from app.rag.config import RAGSettings, DocumentParser, PdfParser, EmbeddingsConfig
+        from app.services.rag.config import RAGSettings, DocumentParser, PdfParser, EmbeddingsConfig
 
         {%- if cookiecutter.use_all_pdf_parsers %}
         pdf_parser = PdfParser(
@@ -590,7 +590,7 @@ class Settings(BaseSettings):
 
 {%- if cookiecutter.enable_rag %}
 # Rebuild Settings to resolve RAGSettings forward reference
-from app.rag.config import RAGSettings
+from app.services.rag.config import RAGSettings
 Settings.model_rebuild()
 {%- endif %}
 

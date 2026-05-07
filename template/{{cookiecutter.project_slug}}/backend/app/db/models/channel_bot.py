@@ -8,7 +8,7 @@ from sqlalchemy import Boolean, Column, ForeignKey, JSON, String, Text
 from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlmodel import Field, SQLModel
 
-from app.channels.base import DEFAULT_ACCESS_POLICY
+from app.services.channels.base import DEFAULT_ACCESS_POLICY
 from app.db.base import TimestampMixin
 
 
@@ -59,7 +59,7 @@ from sqlalchemy import Boolean, ForeignKey, JSON, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.channels.base import DEFAULT_ACCESS_POLICY
+from app.services.channels.base import DEFAULT_ACCESS_POLICY
 from app.db.base import Base, TimestampMixin
 
 
@@ -106,7 +106,7 @@ import uuid
 from sqlalchemy import Boolean, Column, ForeignKey, JSON, String, Text
 from sqlmodel import Field, SQLModel
 
-from app.channels.base import DEFAULT_ACCESS_POLICY_JSON
+from app.services.channels.base import DEFAULT_ACCESS_POLICY_JSON
 from app.db.base import TimestampMixin
 
 
@@ -156,7 +156,7 @@ import uuid
 from sqlalchemy import Boolean, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.channels.base import DEFAULT_ACCESS_POLICY_JSON
+from app.services.channels.base import DEFAULT_ACCESS_POLICY_JSON
 from app.db.base import Base, TimestampMixin
 
 
@@ -205,7 +205,7 @@ from typing import Optional
 from beanie import Document
 from pydantic import Field
 
-from app.channels.base import DEFAULT_ACCESS_POLICY
+from app.services.channels.base import DEFAULT_ACCESS_POLICY
 
 
 class ChannelBot(Document):

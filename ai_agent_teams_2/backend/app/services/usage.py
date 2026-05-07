@@ -10,9 +10,9 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 import app.repositories.usage_event as usage_repo
-from app.billing.credit_service import CreditService
-from app.billing.pricing import usage_to_credits
 from app.core.config import settings
+from app.services.billing.credit_service import CreditService
+from app.services.billing.pricing import usage_to_credits
 
 logger = logging.getLogger(__name__)
 

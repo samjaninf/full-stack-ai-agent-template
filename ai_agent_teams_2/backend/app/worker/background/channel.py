@@ -7,8 +7,8 @@ gets a fast 200 OK while routing/AI happens in the background.
 import logging
 from typing import Any
 
-from app.channels.router import ChannelMessageRouter
 from app.db.session import get_db_context
+from app.services.channels.router import ChannelMessageRouter
 
 logger = logging.getLogger(__name__)
 

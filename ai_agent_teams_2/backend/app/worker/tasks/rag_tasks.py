@@ -11,10 +11,10 @@ from typing import Any
 from celery import shared_task
 
 from app.db.session import get_worker_db_context
-from app.rag.config import DocumentExtensions
-from app.rag.connectors import CONNECTOR_REGISTRY
-from app.rag.ingestion import IngestionService
 from app.repositories import sync_source_repo
+from app.services.rag.config import DocumentExtensions
+from app.services.rag.connectors import CONNECTOR_REGISTRY
+from app.services.rag.ingestion import IngestionService
 from app.services.rag_document import RAGDocumentService
 from app.services.rag_status import RAGStatusService
 from app.services.rag_sync import RAGSyncService

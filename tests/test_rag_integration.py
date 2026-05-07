@@ -84,32 +84,32 @@ class TestRAGFilesExist:
 
     def test_rag_config_exists(self, rag_project) -> None:
         """Test that rag/config.py exists."""
-        rag_config = rag_project / "backend" / "app" / "rag" / "config.py"
+        rag_config = rag_project / "backend" / "app" / "services" / "rag" / "config.py"
         assert rag_config.exists(), "rag/config.py should exist when RAG is enabled"
 
     def test_rag_documents_exists(self, rag_project) -> None:
         """Test that rag/documents.py exists."""
-        rag_docs = rag_project / "backend" / "app" / "rag" / "documents.py"
+        rag_docs = rag_project / "backend" / "app" / "services" / "rag" / "documents.py"
         assert rag_docs.exists(), "rag/documents.py should exist when RAG is enabled"
 
     def test_rag_embeddings_exists(self, rag_project) -> None:
         """Test that rag/embeddings.py exists."""
-        rag_embeddings = rag_project / "backend" / "app" / "rag" / "embeddings.py"
+        rag_embeddings = rag_project / "backend" / "app" / "services" / "rag" / "embeddings.py"
         assert rag_embeddings.exists(), "rag/embeddings.py should exist when RAG is enabled"
 
     def test_rag_ingestion_exists(self, rag_project) -> None:
         """Test that rag/ingestion.py exists."""
-        rag_ingestion = rag_project / "backend" / "app" / "rag" / "ingestion.py"
+        rag_ingestion = rag_project / "backend" / "app" / "services" / "rag" / "ingestion.py"
         assert rag_ingestion.exists(), "rag/ingestion.py should exist when RAG is enabled"
 
     def test_rag_retrieval_exists(self, rag_project) -> None:
         """Test that rag/retrieval.py exists."""
-        rag_retrieval = rag_project / "backend" / "app" / "rag" / "retrieval.py"
+        rag_retrieval = rag_project / "backend" / "app" / "services" / "rag" / "retrieval.py"
         assert rag_retrieval.exists(), "rag/retrieval.py should exist when RAG is enabled"
 
     def test_rag_vectorstore_exists(self, rag_project) -> None:
         """Test that rag/vectorstore.py exists."""
-        rag_vectorstore = rag_project / "backend" / "app" / "rag" / "vectorstore.py"
+        rag_vectorstore = rag_project / "backend" / "app" / "services" / "rag" / "vectorstore.py"
         assert rag_vectorstore.exists(), "rag/vectorstore.py should exist when RAG is enabled"
 
     def test_rag_api_route_exists(self, rag_project) -> None:
@@ -150,7 +150,7 @@ class TestNonRAGProjectNoRAGFiles:
 
     def test_rag_folder_not_exists(self, non_rag_project) -> None:
         """Test that rag/ folder does not exist."""
-        rag_dir = non_rag_project / "backend" / "app" / "rag"
+        rag_dir = non_rag_project / "backend" / "app" / "services" / "rag"
         assert not rag_dir.exists(), "rag/ folder should not exist when RAG is disabled"
 
     def test_rag_api_not_exists(self, non_rag_project) -> None:
@@ -198,7 +198,7 @@ class TestRAGWithAIFrameworks:
         project = generate_project(config, tmp_path)
 
         # Verify RAG files exist
-        rag_dir = project / "backend" / "app" / "rag"
+        rag_dir = project / "backend" / "app" / "services" / "rag"
         assert rag_dir.exists(), f"RAG should be enabled with {framework.value}"
 
 
@@ -220,7 +220,7 @@ class TestRAGWithEmbeddingProviders:
         project = generate_project(config, tmp_path)
 
         # Verify config has correct embedding settings
-        rag_config = project / "backend" / "app" / "rag" / "config.py"
+        rag_config = project / "backend" / "app" / "services" / "rag" / "config.py"
         content = rag_config.read_text()
         assert "text-embedding-3-small" in content or "embedding-3" in content
 
@@ -238,7 +238,7 @@ class TestRAGWithEmbeddingProviders:
         project = generate_project(config, tmp_path)
 
         # Verify config has Voyage settings
-        rag_config = project / "backend" / "app" / "rag" / "config.py"
+        rag_config = project / "backend" / "app" / "services" / "rag" / "config.py"
         content = rag_config.read_text()
         assert "voyage" in content.lower()
 
@@ -256,7 +256,7 @@ class TestRAGWithEmbeddingProviders:
         project = generate_project(config, tmp_path)
 
         # Verify config has SentenceTransformers settings
-        rag_config = project / "backend" / "app" / "rag" / "config.py"
+        rag_config = project / "backend" / "app" / "services" / "rag" / "config.py"
         content = rag_config.read_text()
         assert "sentence" in content.lower() or "all-MiniLM" in content
 
@@ -276,7 +276,7 @@ class TestRAGWithRerankers:
         )
         project = generate_project(config, tmp_path)
 
-        rag_config = project / "backend" / "app" / "rag" / "config.py"
+        rag_config = project / "backend" / "app" / "services" / "rag" / "config.py"
         content = rag_config.read_text()
         # Should not have reranker config
         assert "RerankerConfig" not in content
@@ -302,18 +302,18 @@ class TestRAGWithRerankers:
         )
         project = generate_project(config, tmp_path)
 
-        rag_config = project / "backend" / "app" / "rag" / "config.py"
+        rag_config = project / "backend" / "app" / "services" / "rag" / "config.py"
         content = rag_config.read_text()
         assert "cohere" in content.lower() or "reranker" in content.lower()
 
         # reranker.py should exist
-        reranker_file = project / "backend" / "app" / "rag" / "reranker.py"
+        reranker_file = project / "backend" / "app" / "services" / "rag" / "reranker.py"
         assert reranker_file.exists(), "reranker.py should exist when reranker is enabled"
         reranker_content = reranker_file.read_text()
         assert "CohereReranker" in reranker_content
 
         # retrieval.py should have reranking logic
-        retrieval_file = project / "backend" / "app" / "rag" / "retrieval.py"
+        retrieval_file = project / "backend" / "app" / "services" / "rag" / "retrieval.py"
         retrieval_content = retrieval_file.read_text()
         assert "use_reranker" in retrieval_content
         assert "rerank_service" in retrieval_content
@@ -346,19 +346,19 @@ class TestRAGWithRerankers:
         )
         project = generate_project(config, tmp_path)
 
-        rag_config = project / "backend" / "app" / "rag" / "config.py"
+        rag_config = project / "backend" / "app" / "services" / "rag" / "config.py"
         content = rag_config.read_text()
         assert "cross" in content.lower() or "reranker" in content.lower()
 
         # reranker.py should exist
-        reranker_file = project / "backend" / "app" / "rag" / "reranker.py"
+        reranker_file = project / "backend" / "app" / "services" / "rag" / "reranker.py"
         assert reranker_file.exists(), "reranker.py should exist when reranker is enabled"
         reranker_content = reranker_file.read_text()
         assert "CrossEncoderReranker" in reranker_content
         assert "cross-encoder/ms-marco-MiniLM-L6-v2" in reranker_content
 
         # retrieval.py should have reranking logic
-        retrieval_file = project / "backend" / "app" / "rag" / "retrieval.py"
+        retrieval_file = project / "backend" / "app" / "services" / "rag" / "retrieval.py"
         retrieval_content = retrieval_file.read_text()
         assert "use_reranker" in retrieval_content
 
@@ -384,7 +384,7 @@ class TestRAGWithPDFParsers:
         )
         project = generate_project(config, tmp_path)
 
-        rag_config = project / "backend" / "app" / "rag" / "config.py"
+        rag_config = project / "backend" / "app" / "services" / "rag" / "config.py"
         content = rag_config.read_text()
         assert "pymupdf" in content.lower()
 
@@ -400,7 +400,7 @@ class TestRAGWithPDFParsers:
         )
         project = generate_project(config, tmp_path)
 
-        rag_config = project / "backend" / "app" / "rag" / "config.py"
+        rag_config = project / "backend" / "app" / "services" / "rag" / "config.py"
         content = rag_config.read_text()
         assert "llamaparse" in content.lower()
 
@@ -472,7 +472,7 @@ class TestRAGCodePatterns:
         )
         project = generate_project(config, tmp_path)
 
-        vectorstore = project / "backend" / "app" / "rag" / "vectorstore.py"
+        vectorstore = project / "backend" / "app" / "services" / "rag" / "vectorstore.py"
         content = vectorstore.read_text()
 
         # BaseVectorStore should have abstract list_collections

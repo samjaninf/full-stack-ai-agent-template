@@ -17,8 +17,8 @@ from app.core.config import settings
 from app.core.logfire_setup import instrument_app, setup_logfire
 from app.core.logging import setup_logging
 from app.core.middleware import RequestIDMiddleware
-from app.rag.embeddings import EmbeddingService
-from app.rag.vectorstore import BaseVectorStore, MilvusVectorStore
+from app.services.rag.embeddings import EmbeddingService
+from app.services.rag.vectorstore import BaseVectorStore, MilvusVectorStore
 
 
 class LifespanState(TypedDict, total=False):
@@ -66,9 +66,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[LifespanState, None]:
             logger.error(f"Milvus connection failed: {e}. Vector store will not be available.")
 
     # === Telegram Channel Polling ===
-    from app.channels import register_adapter
-    from app.channels.telegram import TelegramAdapter
     from app.core.channel_crypto import decrypt_token
+    from app.services.channels import register_adapter
+    from app.services.channels.telegram import TelegramAdapter
 
     _telegram_adapter = TelegramAdapter()
     register_adapter(_telegram_adapter)
@@ -87,9 +87,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[LifespanState, None]:
         logger.error("Telegram: failed to start polling: %s", _exc)
 
     # === Slack Adapter (Socket Mode polling for dev, Events API for prod) ===
-    from app.channels import register_adapter as _slack_register
-    from app.channels.slack import SlackAdapter
     from app.core.channel_crypto import decrypt_token as _slack_decrypt
+    from app.services.channels import register_adapter as _slack_register
+    from app.services.channels.slack import SlackAdapter
 
     _slack_adapter = SlackAdapter()
     _slack_register(_slack_adapter)

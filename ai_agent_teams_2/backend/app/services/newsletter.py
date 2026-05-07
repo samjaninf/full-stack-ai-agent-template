@@ -2,7 +2,7 @@
 
 import logging
 
-from app.email.service import get_email_service
+from app.services.email.service import get_email_service
 
 logger = logging.getLogger(__name__)
 

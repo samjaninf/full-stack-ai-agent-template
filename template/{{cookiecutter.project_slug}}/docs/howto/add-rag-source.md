@@ -24,13 +24,13 @@ automatically works with the CLI, API, and frontend UI.
 ### 1. Create the connector class
 
 ```python
-# app/rag/connectors/my_source.py
+# app/services/rag/connectors/my_source.py
 import asyncio
 import logging
 from pathlib import Path
 from typing import Any, ClassVar
 
-from app.rag.connectors import BaseSyncConnector, RemoteFile
+from app.services.rag.connectors import BaseSyncConnector, RemoteFile
 
 logger = logging.getLogger(__name__)
 
@@ -116,10 +116,10 @@ Each field can have:
 
 ### 3. Register in CONNECTOR_REGISTRY
 
-In `app/rag/connectors/__init__.py`, add the import and registration:
+In `app/services/rag/connectors/__init__.py`, add the import and registration:
 
 ```python
-from app.rag.connectors.my_source import MySourceConnector
+from app.services.rag.connectors.my_source import MySourceConnector
 
 CONNECTOR_REGISTRY["my_source"] = MySourceConnector
 ```
@@ -137,7 +137,7 @@ generation:
 
 ```python
 if not use_my_source_ingestion:
-    remove_path("backend/app/rag/connectors/my_source.py")
+    remove_path("backend/app/services/rag/connectors/my_source.py")
 ```
 
 ### 5. Use it

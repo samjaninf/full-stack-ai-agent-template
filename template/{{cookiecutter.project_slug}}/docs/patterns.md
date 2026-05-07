@@ -137,17 +137,17 @@ class UserResponse(UserBase):
 ## Connector Pattern (RAG Sync)
 
 Remote document sources (Google Drive, S3, etc.) use a pluggable connector
-pattern defined in `app/rag/connectors/`. Each connector inherits from
+pattern defined in `app/services/rag/connectors/`. Each connector inherits from
 `BaseSyncConnector` and is registered in the `CONNECTOR_REGISTRY` dictionary.
 
 ### Adding a new connector
 
-1. Create a file in `app/rag/connectors/` (e.g. `sharepoint.py`).
+1. Create a file in `app/services/rag/connectors/` (e.g. `sharepoint.py`).
 2. Subclass `BaseSyncConnector` and implement the required methods.
 3. Register the connector in `CONNECTOR_REGISTRY`.
 
 ```python
-from app.rag.connectors import BaseSyncConnector, RemoteFile, CONNECTOR_REGISTRY
+from app.services.rag.connectors import BaseSyncConnector, RemoteFile, CONNECTOR_REGISTRY
 
 class SharePointConnector(BaseSyncConnector):
     CONNECTOR_TYPE = "sharepoint"

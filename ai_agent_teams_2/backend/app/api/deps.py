@@ -471,13 +471,13 @@ ValidAPIKey = Annotated[str, Depends(verify_api_key)]
 
 # === RAG Service Dependencies ===
 
-from app.rag.embeddings import EmbeddingService
-from app.rag.ingestion import IngestionService
-from app.rag.documents import DocumentProcessor
+from app.services.rag.embeddings import EmbeddingService
+from app.services.rag.ingestion import IngestionService
+from app.services.rag.documents import DocumentProcessor
 from fastapi import Request
 from app.core.config import settings
-from app.rag.retrieval import RetrievalService
-from app.rag.vectorstore import MilvusVectorStore
+from app.services.rag.retrieval import RetrievalService
+from app.services.rag.vectorstore import MilvusVectorStore
 
 
 def get_embedding_service(request: Request) -> EmbeddingService:
@@ -490,7 +490,7 @@ def get_embedding_service(request: Request) -> EmbeddingService:
 # Type Alias for the Embedder
 EmbeddingSvc = Annotated[EmbeddingService, Depends(get_embedding_service)]
 
-from app.rag.vectorstore import BaseVectorStore
+from app.services.rag.vectorstore import BaseVectorStore
 
 
 def get_vectorstore(request: Request, embedder: EmbeddingSvc) -> BaseVectorStore:

@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 logger = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
-    from app.rag.retrieval import BaseRetrievalService
+    from app.services.rag.retrieval import BaseRetrievalService
 
 _retrieval_service: "BaseRetrievalService | None" = None
 
@@ -21,17 +21,17 @@ def _get_retrieval_service() -> "BaseRetrievalService":
     if _retrieval_service is not None:
         return _retrieval_service
     from app.core.config import settings
-    from app.rag.retrieval import RetrievalService
+    from app.services.rag.retrieval import RetrievalService
 {%- if cookiecutter.use_milvus %}
-    from app.rag.vectorstore import MilvusVectorStore
+    from app.services.rag.vectorstore import MilvusVectorStore
 {%- elif cookiecutter.use_qdrant %}
-    from app.rag.vectorstore import QdrantVectorStore
+    from app.services.rag.vectorstore import QdrantVectorStore
 {%- elif cookiecutter.use_chromadb %}
-    from app.rag.vectorstore import ChromaVectorStore
+    from app.services.rag.vectorstore import ChromaVectorStore
 {%- elif cookiecutter.use_pgvector %}
-    from app.rag.vectorstore import PgVectorStore
+    from app.services.rag.vectorstore import PgVectorStore
 {%- endif %}
-    from app.rag.embeddings import EmbeddingService
+    from app.services.rag.embeddings import EmbeddingService
 
     rag_settings = settings.rag
     embedding_service = EmbeddingService(rag_settings)

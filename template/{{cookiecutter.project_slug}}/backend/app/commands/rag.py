@@ -20,20 +20,20 @@ from pathlib import Path
 import click
 
 from app.commands import command, info, success, error, warning
-from app.rag.config import DocumentExtensions, RAGSettings
-from app.rag.documents import DocumentProcessor
-from app.rag.embeddings import EmbeddingService
-from app.rag.ingestion import IngestionService
-from app.rag.retrieval import RetrievalService
-from app.rag.vectorstore import BaseVectorStore
+from app.services.rag.config import DocumentExtensions, RAGSettings
+from app.services.rag.documents import DocumentProcessor
+from app.services.rag.embeddings import EmbeddingService
+from app.services.rag.ingestion import IngestionService
+from app.services.rag.retrieval import RetrievalService
+from app.services.rag.vectorstore import BaseVectorStore
 {%- if cookiecutter.use_milvus %}
-from app.rag.vectorstore import MilvusVectorStore
+from app.services.rag.vectorstore import MilvusVectorStore
 {%- elif cookiecutter.use_qdrant %}
-from app.rag.vectorstore import QdrantVectorStore
+from app.services.rag.vectorstore import QdrantVectorStore
 {%- elif cookiecutter.use_chromadb %}
-from app.rag.vectorstore import ChromaVectorStore
+from app.services.rag.vectorstore import ChromaVectorStore
 {%- elif cookiecutter.use_pgvector %}
-from app.rag.vectorstore import PgVectorStore
+from app.services.rag.vectorstore import PgVectorStore
 {%- endif %}
 
 
@@ -497,7 +497,7 @@ async def stats_async(
 @click.option("--folder-id", "-f", default="", help="Google Drive folder ID (empty = root)")
 def rag_sync_gdrive(collection: str, folder_id: str) -> None:
     """Sync documents from Google Drive into a RAG collection."""
-    from app.rag.sources.google_drive import GoogleDriveSource
+    from app.services.rag.sources.google_drive import GoogleDriveSource
 
     _, vector_store, processor, _, ingestion = get_rag_services()
     source = GoogleDriveSource()
@@ -525,7 +525,7 @@ def rag_sync_gdrive(collection: str, folder_id: str) -> None:
 @click.option("--bucket", "-b", default="", help="S3 bucket (empty = default from settings)")
 def rag_sync_s3(collection: str, prefix: str, bucket: str) -> None:
     """Sync documents from S3/MinIO into a RAG collection."""
-    from app.rag.sources.s3 import S3Source
+    from app.services.rag.sources.s3 import S3Source
 
     _, vector_store, processor, _, ingestion = get_rag_services()
     source = S3Source(bucket=bucket)

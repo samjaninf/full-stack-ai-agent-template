@@ -95,8 +95,8 @@ class InvitationService:
             requester_id,
         )
         try:
-            from app.email.service import get_email_service
             from app.repositories import user_repo as _user_repo
+            from app.services.email.service import get_email_service
 
             org = await organization_repo.get_by_id(self.db, organization_id)
             requester_user = await _user_repo.get_by_id(self.db, requester_id)

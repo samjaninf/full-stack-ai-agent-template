@@ -6,8 +6,8 @@ from sqlalchemy import JSON, Boolean, String, Text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
-from app.channels.base import DEFAULT_ACCESS_POLICY
 from app.db.base import Base, TimestampMixin
+from app.services.channels.base import DEFAULT_ACCESS_POLICY
 
 
 class ChannelBot(Base, TimestampMixin):

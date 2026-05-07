@@ -10,9 +10,9 @@ Sync connectors are pluggable adapters that fetch files from external systems
 
 | Class | Location | Purpose |
 |-------|----------|---------|
-| `BaseSyncConnector` | `app/rag/connectors/__init__.py` | Abstract base class for all connectors |
-| `RemoteFile` | `app/rag/connectors/__init__.py` | Pydantic model describing a remote file |
-| `CONNECTOR_REGISTRY` | `app/rag/connectors/__init__.py` | Dict mapping connector type strings to classes |
+| `BaseSyncConnector` | `app/services/rag/connectors/__init__.py` | Abstract base class for all connectors |
+| `RemoteFile` | `app/services/rag/connectors/__init__.py` | Pydantic model describing a remote file |
+| `CONNECTOR_REGISTRY` | `app/services/rag/connectors/__init__.py` | Dict mapping connector type strings to classes |
 | `SyncSource` | `app/db/models/sync_source.py` | Database model storing source configurations |
 | `SyncLog` | `app/db/models/sync_log.py` | Database model tracking sync operations |
 
@@ -33,13 +33,13 @@ workspace.
 ### 1. Create the connector file
 
 ```python
-# app/rag/connectors/notion.py
+# app/services/rag/connectors/notion.py
 import asyncio
 import logging
 from pathlib import Path
 from typing import Any, ClassVar
 
-from app.rag.connectors import BaseSyncConnector, RemoteFile
+from app.services.rag.connectors import BaseSyncConnector, RemoteFile
 
 logger = logging.getLogger(__name__)
 
@@ -160,10 +160,10 @@ class NotionConnector(BaseSyncConnector):
 
 ### 2. Register in CONNECTOR_REGISTRY
 
-Edit `app/rag/connectors/__init__.py` and add:
+Edit `app/services/rag/connectors/__init__.py` and add:
 
 ```python
-from app.rag.connectors.notion import NotionConnector
+from app.services.rag.connectors.notion import NotionConnector
 
 CONNECTOR_REGISTRY["notion"] = NotionConnector
 ```

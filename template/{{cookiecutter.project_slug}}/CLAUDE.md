@@ -89,13 +89,22 @@ backend/app/
 │   └── models/           # SQLAlchemy models (Mapped[] type hints)
 ├── schemas/              # Pydantic v2 models: *Create, *Update, *Read, *List
 ├── repositories/         # Data access functions — db.flush(), never commit
-├── services/             # Business logic classes — __init__(self, db), raise domain exceptions
-├── agents/               # AI agent wrappers + tools
-{%- if cookiecutter.enable_rag %}
-├── rag/                  # RAG: embeddings, vector store, ingestion, parsers
-│   └── connectors/       # Sync source connectors (Google Drive, S3)
+├── services/             # Business logic — flat *.py for thin domains, subpackage for thick
+│   ├── user.py           #   thin: just a class with db + repo calls
+{%- if cookiecutter.enable_billing %}
+│   ├── billing/          #   thick: facade + sub-services + Stripe client + handlers
 {%- endif %}
-├── worker/               # Background tasks (Celery/Taskiq/ARQ)
+{%- if cookiecutter.enable_rag %}
+│   ├── rag/              #   thick: ingestion + vectorstore + embeddings + connectors
+{%- endif %}
+{%- if cookiecutter.use_telegram or cookiecutter.use_slack %}
+│   ├── channels/         #   thick: Slack/Telegram adapters + router
+{%- endif %}
+{%- if cookiecutter.enable_email %}
+│   └── email/            #   thick: providers + templates
+{%- endif %}
+├── agents/               # AI agent wrappers + tools
+├── worker/               # Background tasks (Celery/Taskiq/ARQ + in-process)
 └── commands/             # CLI commands (auto-discovered)
 ```
 

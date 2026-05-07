@@ -173,17 +173,17 @@ async def _run_ingestion(rag_document_id: str, collection_name: str, filepath: s
     from app.core.config import settings
     from app.db.session import get_worker_db_context
     from app.services.rag_document import RAGDocumentService
-    from app.rag.documents import DocumentProcessor
-    from app.rag.embeddings import EmbeddingService
-    from app.rag.ingestion import IngestionService
+    from app.services.rag.documents import DocumentProcessor
+    from app.services.rag.embeddings import EmbeddingService
+    from app.services.rag.ingestion import IngestionService
 {%- if cookiecutter.use_milvus %}
-    from app.rag.vectorstore import MilvusVectorStore as VectorStore
+    from app.services.rag.vectorstore import MilvusVectorStore as VectorStore
 {%- elif cookiecutter.use_qdrant %}
-    from app.rag.vectorstore import QdrantVectorStore as VectorStore
+    from app.services.rag.vectorstore import QdrantVectorStore as VectorStore
 {%- elif cookiecutter.use_chromadb %}
-    from app.rag.vectorstore import ChromaVectorStore as VectorStore
+    from app.services.rag.vectorstore import ChromaVectorStore as VectorStore
 {%- elif cookiecutter.use_pgvector %}
-    from app.rag.vectorstore import PgVectorStore as VectorStore
+    from app.services.rag.vectorstore import PgVectorStore as VectorStore
 {%- endif %}
 
     rag_settings = settings.rag
@@ -211,18 +211,18 @@ async def _run_sync(sync_log_id: str, source: str, collection_name: str, mode: s
     from app.db.session import get_worker_db_context
     from app.services.rag_document import RAGDocumentService
     from app.services.rag_sync import RAGSyncService
-    from app.rag.documents import DocumentProcessor
-    from app.rag.embeddings import EmbeddingService
-    from app.rag.ingestion import IngestionService
-    from app.rag.config import DocumentExtensions
+    from app.services.rag.documents import DocumentProcessor
+    from app.services.rag.embeddings import EmbeddingService
+    from app.services.rag.ingestion import IngestionService
+    from app.services.rag.config import DocumentExtensions
 {%- if cookiecutter.use_milvus %}
-    from app.rag.vectorstore import MilvusVectorStore as VectorStore
+    from app.services.rag.vectorstore import MilvusVectorStore as VectorStore
 {%- elif cookiecutter.use_qdrant %}
-    from app.rag.vectorstore import QdrantVectorStore as VectorStore
+    from app.services.rag.vectorstore import QdrantVectorStore as VectorStore
 {%- elif cookiecutter.use_chromadb %}
-    from app.rag.vectorstore import ChromaVectorStore as VectorStore
+    from app.services.rag.vectorstore import ChromaVectorStore as VectorStore
 {%- elif cookiecutter.use_pgvector %}
-    from app.rag.vectorstore import PgVectorStore as VectorStore
+    from app.services.rag.vectorstore import PgVectorStore as VectorStore
 {%- endif %}
 
     rag_settings = settings.rag
@@ -365,18 +365,18 @@ async def _run_source_sync(source_id: str, sync_log_id: str | None = None) -> di
     from app.db.session import get_worker_db_context
     from app.services.sync_source import SyncSourceService
     from app.services.rag_sync import RAGSyncService
-    from app.rag.connectors import CONNECTOR_REGISTRY
-    from app.rag.documents import DocumentProcessor
-    from app.rag.embeddings import EmbeddingService
-    from app.rag.ingestion import IngestionService
+    from app.services.rag.connectors import CONNECTOR_REGISTRY
+    from app.services.rag.documents import DocumentProcessor
+    from app.services.rag.embeddings import EmbeddingService
+    from app.services.rag.ingestion import IngestionService
 {%- if cookiecutter.use_milvus %}
-    from app.rag.vectorstore import MilvusVectorStore as VectorStore
+    from app.services.rag.vectorstore import MilvusVectorStore as VectorStore
 {%- elif cookiecutter.use_qdrant %}
-    from app.rag.vectorstore import QdrantVectorStore as VectorStore
+    from app.services.rag.vectorstore import QdrantVectorStore as VectorStore
 {%- elif cookiecutter.use_chromadb %}
-    from app.rag.vectorstore import ChromaVectorStore as VectorStore
+    from app.services.rag.vectorstore import ChromaVectorStore as VectorStore
 {%- elif cookiecutter.use_pgvector %}
-    from app.rag.vectorstore import PgVectorStore as VectorStore
+    from app.services.rag.vectorstore import PgVectorStore as VectorStore
 {%- endif %}
 
     async with get_worker_db_context() as db:

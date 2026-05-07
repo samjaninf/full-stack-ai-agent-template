@@ -120,7 +120,7 @@ class UserService:
         org_service = OrganizationService(self.db)
         await org_service.create_personal_org(user.id, user_in.email)
         try:
-            from app.email.service import get_email_service
+            from app.services.email.service import get_email_service
 
             email_svc = get_email_service()
             login_url = getattr(settings, "BILLING_SUCCESS_URL", None) or getattr(

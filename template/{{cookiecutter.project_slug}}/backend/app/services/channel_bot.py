@@ -11,7 +11,7 @@ from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.channels import get_adapter
+from app.services.channels import get_adapter
 from app.core.channel_crypto import decrypt_token, encrypt_token
 from app.core.config import settings
 from app.core.exceptions import NotFoundError
@@ -162,7 +162,7 @@ from typing import Any
 
 from sqlalchemy.orm import Session as DBSession
 
-from app.channels import get_adapter
+from app.services.channels import get_adapter
 from app.core.channel_crypto import decrypt_token, encrypt_token
 from app.core.config import settings
 from app.core.exceptions import NotFoundError
@@ -308,7 +308,7 @@ import logging
 import secrets
 from typing import Any
 
-from app.channels import get_adapter
+from app.services.channels import get_adapter
 from app.core.channel_crypto import decrypt_token, encrypt_token
 from app.core.config import settings
 from app.core.exceptions import NotFoundError

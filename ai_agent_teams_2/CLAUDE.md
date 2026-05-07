@@ -64,11 +64,14 @@ backend/app/
 │   └── models/           # SQLAlchemy models (Mapped[] type hints)
 ├── schemas/              # Pydantic v2 models: *Create, *Update, *Read, *List
 ├── repositories/         # Data access functions — db.flush(), never commit
-├── services/             # Business logic classes — __init__(self, db), raise domain exceptions
+├── services/             # Business logic — flat *.py for thin domains, subpackage for thick
+│   ├── user.py           #   thin: just a class with db + repo calls
+│   ├── billing/          #   thick: facade + sub-services + Stripe client + handlers
+│   ├── rag/              #   thick: ingestion + vectorstore + embeddings + connectors
+│   ├── channels/         #   thick: Slack/Telegram adapters + router
+│   └── email/            #   thick: providers + templates
 ├── agents/               # AI agent wrappers + tools
-├── rag/                  # RAG: embeddings, vector store, ingestion, parsers
-│   └── connectors/       # Sync source connectors (Google Drive, S3)
-├── worker/               # Background tasks (Celery/Taskiq/ARQ)
+├── worker/               # Background tasks (Celery/Taskiq/ARQ + in-process)
 └── commands/             # CLI commands (auto-discovered)
 ```
 

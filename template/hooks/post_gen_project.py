@@ -142,6 +142,7 @@ if not enable_caching:
 # --- Rate limiting ---
 if not enable_rate_limiting:
     remove_file(os.path.join(backend_app, "core", "rate_limit.py"))
+    remove_dir(os.path.join(backend_app, "services", "rate_limit"))
 
 # --- OAuth ---
 if not enable_oauth:
@@ -156,7 +157,7 @@ if not enable_logfire:
 # --- RAG files ---
 if not enable_rag:
     # Remove entire rag directory when RAG is disabled
-    remove_dir(os.path.join(backend_app, "rag"))
+    remove_dir(os.path.join(backend_app, "services", "rag"))
     # Remove RAG-related API route
     remove_file(os.path.join(backend_app, "api", "routes", "v1", "rag.py"))
     # Remove RAG schema
@@ -189,31 +190,32 @@ if not enable_rag:
         remove_dir(os.path.join(frontend_src, "app", "(dashboard)", "rag"))
 else:
     # RAG enabled — remove optional components if not enabled
+    rag_dir = os.path.join(backend_app, "services", "rag")
     if not enable_rag_image_description:
-        remove_file(os.path.join(backend_app, "rag", "image_describer.py"))
+        remove_file(os.path.join(rag_dir, "image_describer.py"))
     if not enable_google_drive_ingestion:
-        remove_file(os.path.join(backend_app, "rag", "sources", "google_drive.py"))
-        remove_file(os.path.join(backend_app, "rag", "connectors", "google_drive.py"))
+        remove_file(os.path.join(rag_dir, "sources", "google_drive.py"))
+        remove_file(os.path.join(rag_dir, "connectors", "google_drive.py"))
     if not enable_s3_ingestion:
-        remove_file(os.path.join(backend_app, "rag", "sources", "s3.py"))
-        remove_file(os.path.join(backend_app, "rag", "connectors", "s3.py"))
+        remove_file(os.path.join(rag_dir, "sources", "s3.py"))
+        remove_file(os.path.join(rag_dir, "connectors", "s3.py"))
     if not enable_google_drive_ingestion and not enable_s3_ingestion:
-        remove_dir(os.path.join(backend_app, "rag", "sources"))
+        remove_dir(os.path.join(rag_dir, "sources"))
         # Keep rag/connectors/ — its __init__.py defines CONNECTOR_REGISTRY which
         # sync_source.py imports unconditionally even when no connectors are configured.
 
 # --- Messaging channels (Slack / Telegram) ---
 # Per-channel adapters & webhook routes
 if not use_telegram:
-    remove_file(os.path.join(backend_app, "channels", "telegram.py"))
+    remove_file(os.path.join(backend_app, "services", "channels", "telegram.py"))
     remove_file(os.path.join(backend_app, "api", "routes", "v1", "telegram_webhook.py"))
 if not use_slack:
-    remove_file(os.path.join(backend_app, "channels", "slack.py"))
+    remove_file(os.path.join(backend_app, "services", "channels", "slack.py"))
     remove_file(os.path.join(backend_app, "api", "routes", "v1", "slack_webhook.py"))
 
 # Shared channel infrastructure — only present when at least one channel is enabled
 if not use_telegram and not use_slack:
-    remove_dir(os.path.join(backend_app, "channels"))
+    remove_dir(os.path.join(backend_app, "services", "channels"))
     remove_file(os.path.join(backend_app, "api", "routes", "v1", "channels.py"))
     remove_file(os.path.join(backend_app, "core", "channel_crypto.py"))
     remove_file(os.path.join(backend_app, "commands", "channel.py"))
@@ -314,7 +316,22 @@ def remove_empty_dirs(path: str) -> None:
 
 
 # Clean up empty directories in key locations
-for subdir in ["clients", "agents", "worker", "worker/tasks", "worker/background"]:
+for subdir in [
+    "clients",
+    "agents",
+    "worker",
+    "worker/tasks",
+    "worker/background",
+    "services/billing",
+    "services/billing/handlers",
+    "services/channels",
+    "services/email",
+    "services/email/providers",
+    "services/rag",
+    "services/rag/connectors",
+    "services/rag/sources",
+    "services/rate_limit",
+]:
     dir_path = os.path.join(backend_app, subdir)
     if os.path.exists(dir_path):
         remove_empty_dirs(dir_path)
@@ -565,12 +582,11 @@ if not enable_teams:
 
 # --- Billing: remove billing-specific files if enable_billing is false ---
 if not enable_billing:
-    remove_file(os.path.join(backend_app, "services", "billing.py"))
     remove_file(os.path.join(backend_app, "schemas", "billing.py"))
     remove_file(os.path.join(backend_app, "api", "routes", "v1", "billing.py"))
     remove_file(os.path.join(backend_tests, "test_stripe_seats.py"))
-    # Remove the entire billing module
-    remove_dir(os.path.join(backend_app, "billing"))
+    # Remove the entire billing services subpackage (facade + Stripe client + handlers)
+    remove_dir(os.path.join(backend_app, "services", "billing"))
     # Remove billing repositories and models
     remove_file(os.path.join(backend_app, "repositories", "plan.py"))
     remove_file(os.path.join(backend_app, "repositories", "subscription.py"))

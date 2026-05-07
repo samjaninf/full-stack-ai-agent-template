@@ -10,8 +10,8 @@ import tempfile
 from pathlib import Path
 
 from app.db.session import get_db_context
-from app.rag.connectors import CONNECTOR_REGISTRY
-from app.rag.ingestion import IngestionService
+from app.services.rag.connectors import CONNECTOR_REGISTRY
+from app.services.rag.ingestion import IngestionService
 from app.services.rag_document import RAGDocumentService
 from app.services.rag_sync import RAGSyncService
 from app.services.sync_source import SyncSourceService

@@ -7,7 +7,7 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.channels.base import DEFAULT_ACCESS_POLICY
+from app.services.channels.base import DEFAULT_ACCESS_POLICY
 from app.db.models.channel_bot import ChannelBot
 
 
@@ -138,7 +138,7 @@ import json
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session as DBSession
 
-from app.channels.base import DEFAULT_ACCESS_POLICY
+from app.services.channels.base import DEFAULT_ACCESS_POLICY
 from app.db.models.channel_bot import ChannelBot
 
 
@@ -269,7 +269,7 @@ def list_all(
 
 from datetime import UTC, datetime
 
-from app.channels.base import DEFAULT_ACCESS_POLICY
+from app.services.channels.base import DEFAULT_ACCESS_POLICY
 from app.db.models.channel_bot import ChannelBot
 
 

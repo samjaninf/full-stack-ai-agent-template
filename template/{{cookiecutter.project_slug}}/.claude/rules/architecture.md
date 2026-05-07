@@ -74,6 +74,35 @@ Rules:
 - Services call repo functions, never build raw queries
 - One service per domain entity
 
+## Thin vs. thick domains
+
+Services come in two shapes — choose based on whether the domain owns infrastructure (clients, adapters, pipelines, parsers, templates):
+
+**Thin domain → flat module (`app/services/<domain>.py`).** Default. Just a class with `db`, repo calls, and domain exceptions. Examples: `user.py`, `conversation.py`, `invitation.py`.
+
+**Thick domain → subpackage (`app/services/<domain>/`).** When the domain has its own infra. The subpackage contains both the service classes AND the infra (clients, adapters, pipeline modules, domain-specific exceptions). External callers only import from the package root — sub-modules are package-internal.
+
+```
+app/services/billing/
+├── __init__.py            # re-exports BillingService (the public facade)
+├── facade.py              # BillingService — the only thing routes see
+├── checkout_service.py    # internal sub-service
+├── credit_service.py
+├── subscription_service.py
+├── webhook_handler.py
+├── stripe_client.py       # external API client (infra)
+├── pricing.py             # pure data
+├── exceptions.py          # domain-specific, inherits from core/exceptions
+└── handlers/              # event handler modules (infra)
+```
+
+Other thick domains using the same shape: `services/rag/` (ingestion + vectorstore + embeddings + connectors), `services/channels/` (Slack + Telegram adapters + router), `services/email/` (providers + templates).
+
+Rules for thick subpackages:
+- Public API: only the top-level facade exported from `__init__.py`. Routes/workers never import sub-modules directly.
+- Domain-specific exceptions live in the subpackage and inherit from `core/exceptions.py` base classes.
+- Top-level `app/` is reserved for framework concerns (`api/`, `core/`, `db/`, `repositories/`, `schemas/`, `services/`, `worker/`, `agents/`, `commands/`, `clients/`). No new top-level domain packages.
+
 ## Dependency Injection (`app/api/deps.py`)
 
 Use `Annotated` type aliases — never raw `Depends()` in route signatures:

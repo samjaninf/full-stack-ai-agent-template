@@ -13,7 +13,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.exceptions import NotFoundError
 from app.db.models.sync_log import SyncLog
 from app.db.models.sync_source import SyncSource
-from app.rag.connectors import CONNECTOR_REGISTRY
 from app.repositories import sync_log as sync_log_repo
 from app.repositories import sync_source as sync_source_repo
 from app.schemas.sync_source import (
@@ -25,6 +24,7 @@ from app.schemas.sync_source import (
     SyncSourceRead,
     SyncSourceUpdate,
 )
+from app.services.rag.connectors import CONNECTOR_REGISTRY
 
 
 class SyncSourceService:

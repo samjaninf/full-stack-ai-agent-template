@@ -4,7 +4,7 @@
 import logging
 {%- if cookiecutter.enable_email %}
 
-from app.email.service import get_email_service
+from app.services.email.service import get_email_service
 {%- endif %}
 
 logger = logging.getLogger(__name__)

@@ -150,7 +150,7 @@ def channel_webhook_register(bot_id: str) -> None:
     from app.core.config import settings
 
     async def _run() -> None:
-        from app.channels import get_adapter
+        from app.services.channels import get_adapter
 
 {%- if cookiecutter.use_sqlite %}
         with _channel_service() as svc:
@@ -194,7 +194,7 @@ def channel_webhook_delete(bot_id: str) -> None:
     """Remove the webhook for a bot from Telegram."""
 
     async def _run() -> None:
-        from app.channels import get_adapter
+        from app.services.channels import get_adapter
 
 {%- if cookiecutter.use_sqlite %}
         with _channel_service() as svc:
@@ -235,8 +235,8 @@ def channel_test_message(bot_id: str, chat_id: str, text: str) -> None:
     """Send a test message to a chat via a registered bot."""
 
     async def _run() -> None:
-        from app.channels import get_adapter
-        from app.channels.base import OutgoingMessage
+        from app.services.channels import get_adapter
+        from app.services.channels.base import OutgoingMessage
 
 {%- if cookiecutter.use_sqlite %}
         with _channel_service() as svc:

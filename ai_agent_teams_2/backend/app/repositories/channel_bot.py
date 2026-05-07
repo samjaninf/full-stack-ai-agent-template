@@ -5,8 +5,8 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.channels.base import DEFAULT_ACCESS_POLICY
 from app.db.models.channel_bot import ChannelBot
+from app.services.channels.base import DEFAULT_ACCESS_POLICY
 
 
 async def get_by_id(db: AsyncSession, bot_id: UUID) -> ChannelBot | None:

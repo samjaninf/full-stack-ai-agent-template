@@ -126,7 +126,7 @@ class UserService:
 {%- endif %}
 {%- if cookiecutter.enable_email %}
         try:
-            from app.email.service import get_email_service
+            from app.services.email.service import get_email_service
             email_svc = get_email_service()
             login_url = getattr(settings, "BILLING_SUCCESS_URL", None) or getattr(settings, "FRONTEND_URL", "/")
             await email_svc.send_welcome(
