@@ -17,6 +17,9 @@ import {
   UserCircle,
   Building2,
   CreditCard,
+{%- if cookiecutter.enable_admin_panel %}
+  ShieldCheck,
+{%- endif %}
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
 import { useSidebarStore } from "@/stores";
@@ -25,7 +28,7 @@ import { OrgSwitcher } from "@/components/teams";
 {%- endif %}
 
 const adminNavItems = [
-  { name: "Dashboard", href: ROUTES.DASHBOARD, icon: LayoutDashboard, adminOnly: true },
+  { name: "Dashboard", href: ROUTES.DASHBOARD, icon: LayoutDashboard, adminOnly: false },
   { name: "Chat", href: ROUTES.CHAT, icon: MessageSquare, adminOnly: false },
 {%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
   { name: "Knowledge Bases", href: ROUTES.KB, icon: Database, adminOnly: false },
@@ -37,6 +40,9 @@ const adminNavItems = [
   { name: "Billing", href: ROUTES.BILLING, icon: CreditCard, adminOnly: false },
 {%- endif %}
   { name: "Profile", href: ROUTES.PROFILE, icon: UserCircle, adminOnly: false },
+{%- if cookiecutter.enable_admin_panel %}
+  { name: "Admin", href: ROUTES.ADMIN, icon: ShieldCheck, adminOnly: true },
+{%- endif %}
 ];
 
 export function Header() {

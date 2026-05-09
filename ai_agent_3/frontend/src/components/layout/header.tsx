@@ -17,18 +17,20 @@ import {
   UserCircle,
   Building2,
   CreditCard,
+  ShieldCheck,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui";
 import { useSidebarStore } from "@/stores";
 import { OrgSwitcher } from "@/components/teams";
 
 const adminNavItems = [
-  { name: "Dashboard", href: ROUTES.DASHBOARD, icon: LayoutDashboard, adminOnly: true },
+  { name: "Dashboard", href: ROUTES.DASHBOARD, icon: LayoutDashboard, adminOnly: false },
   { name: "Chat", href: ROUTES.CHAT, icon: MessageSquare, adminOnly: false },
   { name: "Knowledge Bases", href: ROUTES.KB, icon: Database, adminOnly: false },
   { name: "Organizations", href: ROUTES.ORGS, icon: Building2, adminOnly: false },
   { name: "Billing", href: ROUTES.BILLING, icon: CreditCard, adminOnly: false },
   { name: "Profile", href: ROUTES.PROFILE, icon: UserCircle, adminOnly: false },
+  { name: "Admin", href: ROUTES.ADMIN, icon: ShieldCheck, adminOnly: true },
 ];
 
 export function Header() {

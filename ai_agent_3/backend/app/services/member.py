@@ -31,8 +31,8 @@ class MemberService:
         *,
         skip: int = 0,
         limit: int = 100,
-    ) -> tuple[list[OrganizationMember], int]:
-        """List members. Any org member may list."""
+    ) -> tuple[list[tuple[OrganizationMember, str, str | None, str | None]], int]:
+        """List members with their joined user info. Any org member may list."""
         membership = await member_repo.get(
             self.db, organization_id=organization_id, user_id=requester_id
         )
@@ -41,9 +41,9 @@ class MemberService:
                 message="Organization not found", details={"org_id": str(organization_id)}
             )
 
-        members = await member_repo.list_for_org(self.db, organization_id, skip=skip, limit=limit)
+        rows = await member_repo.list_for_org(self.db, organization_id, skip=skip, limit=limit)
         total = await member_repo.count_for_org(self.db, organization_id)
-        return members, total
+        return rows, total
 
     async def change_role(
         self,
@@ -51,7 +51,7 @@ class MemberService:
         target_user_id: UUID,
         new_role: str,
         requester_id: UUID,
-    ) -> OrganizationMember:
+    ) -> tuple[OrganizationMember, str, str | None, str | None]:
         """Change a member's role.
 
         Rules:
@@ -79,7 +79,15 @@ class MemberService:
         if requester.role == OrgRole.ADMIN.value and new_role not in _ADMIN_ASSIGNABLE_ROLES:
             raise AuthorizationError(message="Admin can only assign Member or Viewer roles")
 
-        return await member_repo.update_role(self.db, target, role=new_role)
+        updated = await member_repo.update_role(self.db, target, role=new_role)
+
+        from app.repositories import user_repo
+
+        user = await user_repo.get_by_id(self.db, updated.user_id)
+        email = user.email if user else ""
+        full_name = user.full_name if user else None
+        avatar_url = user.avatar_url if user else None
+        return updated, email, full_name, avatar_url
 
     async def remove(
         self,

@@ -25,16 +25,19 @@ async def list_members(
     limit: int = Query(50, ge=1, le=100, description="Max items to return"),
 ) -> Any:
     """List members of an organization. Any member may call this."""
-    members, total = await service.list_for_org(org_id, user.id, skip=skip, limit=limit)
+    rows, total = await service.list_for_org(org_id, user.id, skip=skip, limit=limit)
     items = [
         OrganizationMemberRead(
             id=m.id,
             organization_id=m.organization_id,
             user_id=m.user_id,
             role=m.role,
+            email=email,
+            full_name=full_name,
+            avatar_url=avatar_url,
             joined_at=m.joined_at,
         )
-        for m in members
+        for m, email, full_name, avatar_url in rows
     ]
     return OrganizationMemberList(items=items, total=total)
 
@@ -48,12 +51,17 @@ async def update_member_role(
     user: CurrentUser,
 ) -> Any:
     """Change a member's role. Requires Owner or Admin."""
-    member = await service.change_role(org_id, target_user_id, data.role, requester_id=user.id)
+    member, email, full_name, avatar_url = await service.change_role(
+        org_id, target_user_id, data.role, requester_id=user.id
+    )
     return OrganizationMemberRead(
         id=member.id,
         organization_id=member.organization_id,
         user_id=member.user_id,
         role=member.role,
+        email=email,
+        full_name=full_name,
+        avatar_url=avatar_url,
         joined_at=member.joined_at,
     )
 

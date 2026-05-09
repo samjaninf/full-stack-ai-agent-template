@@ -1,21 +1,20 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  BarChart,
   Bar,
-  LineChart,
+  BarChart,
+  CartesianGrid,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  CartesianGrid,
 } from "recharts";
 import { Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+
+import { LoadingState } from "@/components/states";
 import { apiClient } from "@/lib/api-client";
 
 interface UsageAggregate {
@@ -55,6 +54,35 @@ interface CreditTransaction {
   type: string;
   description: string | null;
   created_at: string;
+}
+
+function StatTile({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-border bg-card rounded-2xl border p-5">
+      <p className="text-foreground/55 font-mono text-[11px] tracking-wider uppercase">{label}</p>
+      <p className="font-display text-foreground mt-2 text-3xl font-bold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function ChartCard({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="border-border bg-card rounded-2xl border p-5">
+      <header className="mb-4">
+        <h2 className="text-foreground text-sm font-semibold">{title}</h2>
+        {description && <p className="text-foreground/55 mt-0.5 text-xs">{description}</p>}
+      </header>
+      {children}
+    </section>
+  );
 }
 
 export default function UsageDashboardPage() {
@@ -127,149 +155,127 @@ export default function UsageDashboardPage() {
       calls: b.total_calls,
     })) ?? [];
 
+  const totalTokens = aggregate
+    ? aggregate.total_input_tokens + aggregate.total_output_tokens
+    : null;
+
   return (
-    <div className="mx-auto max-w-4xl space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <div className="mx-auto w-full max-w-5xl space-y-8">
+      <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">Usage Dashboard</h1>
-          <p className="text-muted-foreground text-sm">
-            Token consumption and credit usage across your organization.
+          <p className="text-foreground/55 font-mono text-[11px] tracking-wider uppercase">
+            Billing · Usage
+          </p>
+          <h1 className="font-display text-foreground mt-1 text-3xl font-bold tracking-tight sm:text-4xl">
+            Token consumption
+          </h1>
+          <p className="text-foreground/65 mt-1 max-w-xl text-sm">
+            Credits and tokens used across this organization in the last 30 days, broken down by
+            model and day.
           </p>
         </div>
-        <Button variant="outline" onClick={handleExport}>
-          <Download className="mr-2 h-4 w-4" />
+        <button
+          type="button"
+          onClick={handleExport}
+          className="border-foreground/15 hover:border-foreground/40 text-foreground inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors"
+        >
+          <Download className="h-4 w-4" />
           Export CSV
-        </Button>
-      </div>
+        </button>
+      </header>
 
       {isLoading ? (
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[...Array(3)].map((_, i) => (
-            <Skeleton key={i} className="h-28 w-full" />
-          ))}
-        </div>
+        <LoadingState variant="stats" rows={3} />
       ) : (
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Credits Used</CardDescription>
-              <CardTitle className="text-3xl tabular-nums">
-                {aggregate?.total_credits_charged.toLocaleString() ?? "—"}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Tokens</CardDescription>
-              <CardTitle className="text-3xl tabular-nums">
-                {aggregate
-                  ? (aggregate.total_input_tokens + aggregate.total_output_tokens).toLocaleString()
-                  : "—"}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total API Calls</CardDescription>
-              <CardTitle className="text-3xl tabular-nums">
-                {aggregate?.total_calls.toLocaleString() ?? "—"}
-              </CardTitle>
-            </CardHeader>
-          </Card>
+          <StatTile
+            label="Credits used"
+            value={aggregate?.total_credits_charged.toLocaleString() ?? "—"}
+          />
+          <StatTile label="Tokens" value={totalTokens?.toLocaleString() ?? "—"} />
+          <StatTile label="API calls" value={aggregate?.total_calls.toLocaleString() ?? "—"} />
         </div>
       )}
 
       {!isLoading && timelineChartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Daily Credits (Last 30 Days)</CardTitle>
-            <CardDescription>Credit consumption per day.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={220}>
-              <LineChart data={timelineChartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis
-                  dataKey="day"
-                  tick={{ fontSize: 11 }}
-                  className="fill-muted-foreground"
-                  interval="preserveStartEnd"
-                />
-                <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
-                <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "6px",
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="credits"
-                  stroke="hsl(var(--primary))"
-                  strokeWidth={2}
-                  dot={false}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <ChartCard title="Daily credits" description="Last 30 days of credit consumption.">
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={timelineChartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis
+                dataKey="day"
+                tick={{ fontSize: 11 }}
+                className="fill-muted-foreground"
+                interval="preserveStartEnd"
+              />
+              <YAxis tick={{ fontSize: 11 }} className="fill-muted-foreground" />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--popover))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "10px",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="credits"
+                stroke="hsl(var(--primary))"
+                strokeWidth={2}
+                dot={false}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
       )}
 
       {!isLoading && byModelChartData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Credits by Model</CardTitle>
-            <CardDescription>Credit consumption broken down by model.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={260}>
-              <BarChart data={byModelChartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
-                <XAxis dataKey="name" tick={{ fontSize: 12 }} className="fill-muted-foreground" />
-                <YAxis tick={{ fontSize: 12 }} className="fill-muted-foreground" />
-                <Tooltip
-                  contentStyle={{
-                    background: "hsl(var(--popover))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "6px",
-                  }}
-                />
-                <Bar dataKey="credits" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
+        <ChartCard title="Credits by model" description="Where the spend is concentrated.">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={byModelChartData} margin={{ top: 4, right: 4, bottom: 4, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+              <XAxis dataKey="name" tick={{ fontSize: 12 }} className="fill-muted-foreground" />
+              <YAxis tick={{ fontSize: 12 }} className="fill-muted-foreground" />
+              <Tooltip
+                contentStyle={{
+                  background: "hsl(var(--popover))",
+                  border: "1px solid hsl(var(--border))",
+                  borderRadius: "10px",
+                }}
+              />
+              <Bar dataKey="credits" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
       )}
 
       {!isLoading && aggregate && aggregate.by_model.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Per-Model Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="divide-y">
-              {aggregate.by_model.map((m) => (
-                <div key={m.model} className="grid grid-cols-4 gap-4 py-3 text-sm">
-                  <div className="col-span-2">
-                    <p className="font-medium">{m.model}</p>
-                    <p className="text-muted-foreground text-xs">{m.provider}</p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Tokens</p>
-                    <p className="font-mono">
-                      {(m.input_tokens + m.output_tokens).toLocaleString()}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-muted-foreground">Credits</p>
-                    <p className="font-mono">{m.credits_charged.toLocaleString()}</p>
-                  </div>
+        <ChartCard title="Per-model breakdown">
+          <div className="divide-foreground/10 -mx-1 divide-y">
+            {aggregate.by_model.map((m) => (
+              <div
+                key={m.model}
+                className="grid grid-cols-4 gap-4 px-1 py-3 text-sm tabular-nums"
+              >
+                <div className="col-span-2 min-w-0">
+                  <p className="text-foreground truncate font-medium">{m.model}</p>
+                  <p className="text-foreground/55 text-xs">{m.provider}</p>
                 </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+                <div>
+                  <p className="text-foreground/55 text-xs">Tokens</p>
+                  <p className="text-foreground font-mono">
+                    {(m.input_tokens + m.output_tokens).toLocaleString()}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-foreground/55 text-xs">Credits</p>
+                  <p className="text-foreground font-mono">
+                    {m.credits_charged.toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
       )}
     </div>
   );

@@ -43,11 +43,11 @@ def list_members(
 {%- endif %}
     """List members of an organization. Any member may call this."""
 {%- if cookiecutter.use_postgresql %}
-    members, total = await service.list_for_org(org_id, user.id, skip=skip, limit=limit)
+    rows, total = await service.list_for_org(org_id, user.id, skip=skip, limit=limit)
 {%- elif cookiecutter.use_sqlite %}
-    members, total = service.list_for_org(org_id, str(user.id), skip=skip, limit=limit)
+    rows, total = service.list_for_org(org_id, str(user.id), skip=skip, limit=limit)
 {%- else %}
-    members, total = await service.list_for_org(org_id, str(user.id), skip=skip, limit=limit)
+    rows, total = await service.list_for_org(org_id, str(user.id), skip=skip, limit=limit)
 {%- endif %}
     items = [
         OrganizationMemberRead(
@@ -55,9 +55,12 @@ def list_members(
             organization_id=m.organization_id,
             user_id=m.user_id,
             role=m.role,
+            email=email,
+            full_name=full_name,
+            avatar_url=avatar_url,
             joined_at=m.joined_at,
         )
-        for m in members
+        for m, email, full_name, avatar_url in rows
     ]
     return OrganizationMemberList(items=items, total=total)
 
@@ -87,17 +90,20 @@ def update_member_role(
 {%- endif %}
     """Change a member's role. Requires Owner or Admin."""
 {%- if cookiecutter.use_postgresql %}
-    member = await service.change_role(org_id, target_user_id, data.role, requester_id=user.id)
+    member, email, full_name, avatar_url = await service.change_role(org_id, target_user_id, data.role, requester_id=user.id)
 {%- elif cookiecutter.use_sqlite %}
-    member = service.change_role(org_id, target_user_id, data.role, requester_id=str(user.id))
+    member, email, full_name, avatar_url = service.change_role(org_id, target_user_id, data.role, requester_id=str(user.id))
 {%- else %}
-    member = await service.change_role(org_id, target_user_id, data.role, requester_id=str(user.id))
+    member, email, full_name, avatar_url = await service.change_role(org_id, target_user_id, data.role, requester_id=str(user.id))
 {%- endif %}
     return OrganizationMemberRead(
         id=member.id,
         organization_id=member.organization_id,
         user_id=member.user_id,
         role=member.role,
+        email=email,
+        full_name=full_name,
+        avatar_url=avatar_url,
         joined_at=member.joined_at,
     )
 

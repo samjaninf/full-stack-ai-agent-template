@@ -29,15 +29,19 @@ async def list_for_org(
     *,
     skip: int = 0,
     limit: int = 100,
-) -> list[OrganizationMember]:
+) -> list[tuple[OrganizationMember, str, str | None, str | None]]:
+    """Return (member, email, full_name, avatar_url) tuples ordered by join date."""
+    from app.db.models.user import User
+
     result = await db.execute(
-        select(OrganizationMember)
+        select(OrganizationMember, User.email, User.full_name, User.avatar_url)
+        .join(User, User.id == OrganizationMember.user_id)
         .where(OrganizationMember.organization_id == organization_id)
         .order_by(OrganizationMember.joined_at.asc())
         .offset(skip)
         .limit(limit)
     )
-    return list(result.scalars().all())
+    return [(row[0], row[1], row[2], row[3]) for row in result.all()]
 
 
 async def count_for_org(db: AsyncSession, organization_id: UUID) -> int:

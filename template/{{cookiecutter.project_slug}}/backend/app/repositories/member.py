@@ -32,15 +32,19 @@ async def list_for_org(
     *,
     skip: int = 0,
     limit: int = 100,
-) -> list[OrganizationMember]:
+) -> list[tuple[OrganizationMember, str, str | None, str | None]]:
+    """Return (member, email, full_name, avatar_url) tuples ordered by join date."""
+    from app.db.models.user import User
+
     result = await db.execute(
-        select(OrganizationMember)
+        select(OrganizationMember, User.email, User.full_name, User.avatar_url)
+        .join(User, User.id == OrganizationMember.user_id)
         .where(OrganizationMember.organization_id == organization_id)
         .order_by(OrganizationMember.joined_at.asc())
         .offset(skip)
         .limit(limit)
     )
-    return list(result.scalars().all())
+    return [(row[0], row[1], row[2], row[3]) for row in result.all()]
 
 
 async def count_for_org(db: AsyncSession, organization_id: UUID) -> int:
@@ -137,16 +141,19 @@ def get(db: Session, *, organization_id: str, user_id: str) -> OrganizationMembe
 
 def list_for_org(
     db: Session, organization_id: str, *, skip: int = 0, limit: int = 100
-) -> list[OrganizationMember]:
-    return list(
-        db.execute(
-            select(OrganizationMember)
-            .where(OrganizationMember.organization_id == organization_id)
-            .order_by(OrganizationMember.joined_at.asc())
-            .offset(skip)
-            .limit(limit)
-        ).scalars().all()
-    )
+) -> list[tuple[OrganizationMember, str, str | None, str | None]]:
+    """Return (member, email, full_name, avatar_url) tuples ordered by join date."""
+    from app.db.models.user import User
+
+    rows = db.execute(
+        select(OrganizationMember, User.email, User.full_name, User.avatar_url)
+        .join(User, User.id == OrganizationMember.user_id)
+        .where(OrganizationMember.organization_id == organization_id)
+        .order_by(OrganizationMember.joined_at.asc())
+        .offset(skip)
+        .limit(limit)
+    ).all()
+    return [(row[0], row[1], row[2], row[3]) for row in rows]
 
 
 def count_for_org(db: Session, organization_id: str) -> int:
@@ -230,10 +237,18 @@ async def get(*, organization_id: str, user_id: str) -> Optional[OrganizationMem
 
 async def list_for_org(
     organization_id: str, *, skip: int = 0, limit: int = 100
-) -> list[OrganizationMember]:
-    return await OrganizationMember.find(
+) -> list[tuple[OrganizationMember, str, str | None, str | None]]:
+    """Return (member, email, full_name, avatar_url) tuples ordered by join date."""
+    from app.db.models.user import User
+
+    members = await OrganizationMember.find(
         OrganizationMember.organization_id == organization_id
     ).skip(skip).limit(limit).to_list()
+    rows: list[tuple[OrganizationMember, str, str | None, str | None]] = []
+    for m in members:
+        user = await User.get(m.user_id)
+        rows.append((m, user.email if user else "", user.full_name if user else None, user.avatar_url if user else None))
+    return rows
 
 
 async def count_for_org(organization_id: str) -> int:

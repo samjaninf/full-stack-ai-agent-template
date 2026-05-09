@@ -64,10 +64,13 @@ class OrganizationList(BaseSchema):
 
 class OrganizationMemberRead(BaseSchema):
     id: _ID
-    user: UserRead
+    organization_id: _ID
+    user_id: _ID
     role: str
+    email: str
+    full_name: str | None = None
+    avatar_url: str | None = None
     joined_at: datetime
-    invited_by: UserRead | None = None
 
 
 class OrganizationMemberUpdate(BaseSchema):
