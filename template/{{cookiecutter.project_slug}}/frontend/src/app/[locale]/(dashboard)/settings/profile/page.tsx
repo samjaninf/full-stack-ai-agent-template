@@ -55,6 +55,10 @@ export default function ProfileSettingsPage() {
 
   const [sessions, setSessions] = useState<Session[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
+  // Backend may not have a sessions endpoint when `enable_session_management`
+  // is off (stateless JWT). Track availability so we can hide the whole section
+  // instead of showing a misleading "no data" placeholder.
+  const [sessionsAvailable, setSessionsAvailable] = useState(true);
 
   useEffect(() => {
     setName(user?.full_name ?? "");
@@ -65,8 +69,12 @@ export default function ProfileSettingsPage() {
     try {
       const data = await apiClient.get<SessionListResponse>("/sessions");
       setSessions(data.sessions);
-    } catch {
-      // ignore — sessions endpoint may be missing in some configs
+      setSessionsAvailable(true);
+    } catch (err) {
+      // 404 = endpoint not exposed (session management disabled at gen time).
+      if (err instanceof ApiError && err.status === 404) {
+        setSessionsAvailable(false);
+      }
     } finally {
       setSessionsLoading(false);
     }
@@ -256,6 +264,7 @@ export default function ProfileSettingsPage() {
         </div>
       </SettingsSection>
 
+      {sessionsAvailable && (
       <SettingsSection
         title="Active sessions"
         description="Devices currently signed in to your account."
@@ -333,6 +342,7 @@ export default function ProfileSettingsPage() {
           </ul>
         )}
       </SettingsSection>
+      )}
     </div>
   );
 }
