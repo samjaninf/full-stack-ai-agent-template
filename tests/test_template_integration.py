@@ -77,7 +77,7 @@ def generated_project_full(tmp_path: Path) -> Path:
         enable_docker=True,
         ci_type=CIType.GITHUB,
         enable_kubernetes=True,
-        frontend=FrontendType.NONE,
+        frontend=FrontendType.NEXTJS,
     )
     return generate_project(config, tmp_path)
 

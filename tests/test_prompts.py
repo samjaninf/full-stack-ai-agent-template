@@ -367,7 +367,7 @@ class TestPromptLogfire:
         mock_confirm.ask.return_value = False
         mock_questionary.confirm.return_value = mock_confirm
 
-        enabled, features = prompt_logfire(BackgroundTaskType.NONE)
+        enabled, features = prompt_logfire(BackgroundTaskType.NONE, AIFrameworkType.PYDANTIC_AI)
 
         assert enabled is False
         assert isinstance(features, LogfireFeatures)
@@ -384,7 +384,7 @@ class TestPromptLogfire:
         mock_questionary.checkbox.return_value = mock_checkbox
         mock_questionary.Choice = MagicMock()
 
-        enabled, features = prompt_logfire(BackgroundTaskType.NONE)
+        enabled, features = prompt_logfire(BackgroundTaskType.NONE, AIFrameworkType.PYDANTIC_AI)
 
         assert enabled is True
         assert features.fastapi is True
@@ -405,7 +405,7 @@ class TestPromptLogfire:
         mock_questionary.checkbox.return_value = mock_checkbox
         mock_questionary.Choice = MagicMock()
 
-        enabled, features = prompt_logfire(BackgroundTaskType.CELERY)
+        enabled, features = prompt_logfire(BackgroundTaskType.CELERY, AIFrameworkType.PYDANTIC_AI)
 
         assert enabled is True
         assert features.celery is True

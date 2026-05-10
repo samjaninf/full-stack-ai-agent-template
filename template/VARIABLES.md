@@ -94,6 +94,13 @@ These variables are set automatically by the generator.
 | `use_jwt` | bool | `true` | JWT authentication is enabled | Always true |
 | `use_api_key` | bool | `true` | API Key authentication is enabled | Always true |
 | `use_auth` | bool | `true` | Authentication is enabled | Always true |
+| `auth_mode` | string | `"local"` | Auth architecture: `local` (app manages passwords/JWTs) or `delegated` (external IdP like Auth0, Clerk, Cognito, Keycloak) | - |
+| `use_local_auth` | bool | `true` | Local auth is active (app issues its own JWTs) | Computed from `auth_mode` |
+| `use_delegated_auth` | bool | `false` | Delegated auth is active (external IdP issues tokens) | Computed from `auth_mode` |
+| `use_shared_secret_jwt` | bool | `false` | IdP tokens validated with a shared HS256 secret | Computed from `auth_mode` + IdP config |
+| `use_jwks_idp` | bool | `false` | IdP tokens validated via JWKS endpoint (RS256/ES256) | Computed from `auth_mode` + IdP config |
+| `use_external_user_id_in_conversations` | bool | `false` | Store external IdP user ID on conversation records | Requires `use_delegated_auth` |
+| `use_all_providers` | bool | `false` | Enable all LLM providers in generated config | Computed from LLM provider selection |
 
 ---
 

@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from fastapi_gen.config import (
     BackgroundTaskType,
     EmbeddingProviderType,
+    FrontendType,
     LLMProviderType,
     OAuthProvider,
     PdfParserType,
@@ -306,6 +307,7 @@ class TestRAGCookiecutterContext:
             project_name="test",
             rag_features=RAGFeatures(enable_rag=True, enable_google_drive_ingestion=True),
             oauth_provider=OAuthProvider.GOOGLE,
+            frontend=FrontendType.NEXTJS,
             background_tasks=BackgroundTaskType.CELERY,
             enable_redis=True,
             enable_docker=True,

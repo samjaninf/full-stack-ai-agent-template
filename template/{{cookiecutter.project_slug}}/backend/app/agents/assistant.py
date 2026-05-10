@@ -192,7 +192,7 @@ class AssistantAgent:
         # ignored by other providers, so this is safe to apply unconditionally.
         model_settings: ModelSettings = ModelSettings(temperature=self.temperature)
         if self.thinking_effort:
-            model_settings["openai_reasoning_summary"] = "auto"  # type: ignore[typeddict-unknown-key]
+            model_settings["openai_reasoning_summary"] = "auto"  # type: ignore[typeddict-unknown-key]  # ty: ignore[invalid-key]
 
         agent = Agent[Deps, str](
             model=model,
