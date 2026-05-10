@@ -216,8 +216,27 @@ async def persist_assistant_turn(
 async def resolve_kb_collections(
     conversation_id: str | None,
     user_id: Any,
+    override_kb_ids: list[str] | None = None,
+    organization_id: str | None = None,
 ) -> list[str]:
-    """Return active KB collection names for the conversation, or an empty list."""
+    """Return active KB collection names for the conversation.
+
+    When ``override_kb_ids`` is provided (e.g. the client included a draft
+    selection in the WS payload before the conversation was saved), those IDs
+    are intersected with KBs the user can access and returned directly. Only
+    IDs come from the client — collection names are always resolved against
+    the user's accessible KBs server-side.
+    """
+    if override_kb_ids is not None:
+        async with get_db_context() as db:
+            kb_service = KnowledgeBaseService(db)
+            org_uuid = UUID(organization_id) if organization_id else None
+            return await kb_service.resolve_collection_names_for_ids(
+                kb_ids=[UUID(i) for i in override_kb_ids if i],
+                user_id=user_id,
+                organization_id=org_uuid,
+            )
+
     if not conversation_id:
         return []
     async with get_db_context() as db:

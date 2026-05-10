@@ -75,6 +75,9 @@ async def create(
 {%- if cookiecutter.enable_teams %}
     organization_id: UUID | None = None,
 {%- endif %}
+{%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}
+    knowledge_base_id: UUID | None = None,
+{%- endif %}
 ) -> RAGDocument:
     """Create a new RAG document record."""
     doc = RAGDocument(
@@ -86,6 +89,9 @@ async def create(
         status=status,
 {%- if cookiecutter.enable_teams %}
         organization_id=organization_id,
+{%- endif %}
+{%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}
+        knowledge_base_id=knowledge_base_id,
 {%- endif %}
     )
     db.add(doc)

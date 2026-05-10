@@ -6,4 +6,4 @@ export { useChatSidebarStore } from "./chat-sidebar-store";
 export { useConversationStore } from "./conversation-store";
 export { useFilePreviewStore } from "./file-preview-store";
 export { useOrgStore } from "./org-store";
-export { useKBPanelStore } from "./kb-panel-store";
+export { useKBSelectionStore } from "./kb-selection-store";

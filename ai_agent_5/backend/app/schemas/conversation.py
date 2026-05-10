@@ -140,6 +140,10 @@ class ConversationUpdate(BaseSchema):
 
     title: str | None = Field(default=None, max_length=255)
     is_archived: bool | None = None
+    active_knowledge_base_ids: list[UUID] | None = Field(
+        default=None,
+        description="null=no change, []=RAG disabled, [id,...]=explicit KB selection",
+    )
 
 
 class ConversationKBSettings(BaseSchema):

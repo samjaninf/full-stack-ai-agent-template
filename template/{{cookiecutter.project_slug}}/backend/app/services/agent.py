@@ -379,8 +379,32 @@ async def resolve_kb_collections(
 {%- if cookiecutter.websocket_auth_jwt %}
     user_id: Any,
 {%- endif %}
+    override_kb_ids: list[str] | None = None,
+    organization_id: str | None = None,
 ) -> list[str]:
-    """Return active KB collection names for the conversation, or an empty list."""
+    """Return active KB collection names for the conversation.
+
+    When ``override_kb_ids`` is provided (e.g. the client included a draft
+    selection in the WS payload before the conversation was saved), those IDs
+    are intersected with KBs the user can access and returned directly. Only
+    IDs come from the client — collection names are always resolved against
+    the user's accessible KBs server-side.
+    """
+{%- if cookiecutter.use_postgresql %}
+    if override_kb_ids is not None:
+        async with get_db_context() as db:
+            kb_service = KnowledgeBaseService(db)
+            org_uuid = UUID(organization_id) if organization_id else None
+            return await kb_service.resolve_collection_names_for_ids(
+                kb_ids=[UUID(i) for i in override_kb_ids if i],
+{%- if cookiecutter.websocket_auth_jwt %}
+                user_id=user_id,
+{%- else %}
+                user_id=None,
+{%- endif %}
+                organization_id=org_uuid,
+            )
+{%- endif %}
     if not conversation_id:
         return []
 {%- if cookiecutter.use_postgresql %}

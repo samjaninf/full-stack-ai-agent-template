@@ -10,5 +10,5 @@ export { FilePreviewPanel } from "./file-preview-panel";
 export { PendingMessages } from "./pending-messages";
 export { ConversationSidebar } from "./conversation-sidebar";
 {%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
-export { KBPanel } from "./kb-panel";
+export { KBSelector } from "./kb-selector";
 {%- endif %}

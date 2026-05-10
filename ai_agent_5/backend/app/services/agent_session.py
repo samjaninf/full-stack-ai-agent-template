@@ -41,6 +41,34 @@ from app.services.file_storage import get_file_storage
 logger = logging.getLogger(__name__)
 
 
+async def _persist_active_kb_ids(
+    conversation_id: str,
+    kb_ids: list[str],
+    *,
+    user_id: Any,
+) -> None:
+    """Save the client-supplied KB selection onto the conversation row.
+
+    Best-effort — a failure here doesn't break the agent run; future turns
+    will simply re-receive the override on each WS payload.
+    """
+    from uuid import UUID
+
+    from app.api.deps import get_conversation_service
+    from app.db.session import get_db_context
+
+    try:
+        async with get_db_context() as db:
+            svc = get_conversation_service(db)
+            await svc.update_kb_settings(
+                UUID(conversation_id),
+                active_knowledge_base_ids=kb_ids,
+                user_id=user_id,
+            )
+    except Exception as exc:
+        logger.warning("Failed to persist KB selection on conversation %s: %s", conversation_id, exc)
+
+
 class AgentSession:
     """One WebSocket session with the AI agent."""
 
@@ -86,10 +114,30 @@ class AgentSession:
             )
             model_history = build_message_history(self.conversation_history)
             user_input = await self._build_multimodal_input(user_message, file_ids)
-            self.deps.kb_collection_names = await resolve_kb_collections(
-                self.current_conversation_id,
-                self.user.id,
-            )
+            # Client may include a draft KB selection in the WS payload (set
+            # before the conversation row existed). Use it as an override so
+            # the very first agent turn searches the right KBs; we also
+            # persist it onto the conversation row so future turns can read
+            # from DB without re-sending.
+            override_kb_ids = data.get("active_knowledge_base_ids")
+            if isinstance(override_kb_ids, list):
+                self.deps.kb_collection_names = await resolve_kb_collections(
+                    self.current_conversation_id,
+                    self.user.id,
+                    override_kb_ids=[str(i) for i in override_kb_ids],
+                    organization_id=str(organization_id) if organization_id else None,
+                )
+                if self.current_conversation_id:
+                    await _persist_active_kb_ids(
+                        self.current_conversation_id,
+                        [str(i) for i in override_kb_ids],
+                        user_id=self.user.id,
+                    )
+            else:
+                self.deps.kb_collection_names = await resolve_kb_collections(
+                    self.current_conversation_id,
+                    self.user.id,
+                )
 
             collected_tool_calls: list[dict[str, Any]] = []
             async with assistant.agent.iter(

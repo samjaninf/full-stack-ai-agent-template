@@ -11,7 +11,7 @@ export { useMembers } from "./use-members";
 export { useInvitations } from "./use-invitations";
 {%- endif %}
 {%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
-export { useKnowledgeBases } from "./use-knowledge-bases";
+export { useKnowledgeBases, useKBDetail } from "./use-knowledge-bases";
 {%- endif %}
 {%- if cookiecutter.enable_billing %}
 export { useBilling, useSubscription, useCredits, usePlans, useInvoices } from "./use-billing";

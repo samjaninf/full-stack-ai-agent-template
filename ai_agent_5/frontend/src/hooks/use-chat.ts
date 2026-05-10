@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { nanoid } from "nanoid";
 import { useWebSocket } from "./use-websocket";
-import { useChatStore, useAuthStore } from "@/stores";
+import { useChatStore, useAuthStore, useKBSelectionStore } from "@/stores";
 import type { ChatMessageFile, Decision, PendingApproval, ToolCall, WSEvent } from "@/types";
 import { WS_URL } from "@/lib/constants";
 import { useConversationStore } from "@/stores";
@@ -453,6 +453,10 @@ export function useChat(options: UseChatOptions = {}) {
       if (modelRef.current) payload.model = modelRef.current;
       if (temperatureRef.current !== null) payload.temperature = temperatureRef.current;
       if (thinkingEffortRef.current !== null) payload.thinking_effort = thinkingEffortRef.current;
+      // Always carry the KB selection so the very first message (sent before
+      // a conversation row exists) already targets the chosen KBs. The
+      // backend persists this onto the conversation after creation.
+      payload.active_knowledge_base_ids = useKBSelectionStore.getState().activeKBIds;
       sendMessage(payload);
     },
     [addMessage, sendMessage, conversationId],

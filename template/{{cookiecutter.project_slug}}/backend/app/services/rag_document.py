@@ -103,6 +103,9 @@ class RAGDocumentService:
 {%- if cookiecutter.enable_teams %}
         organization_id: UUID | None = None,
 {%- endif %}
+{%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}
+        knowledge_base_id: UUID | None = None,
+{%- endif %}
     ) -> RAGDocument:
         """Create a new RAG document tracking record."""
         return await rag_document_repo.create(
@@ -114,6 +117,9 @@ class RAGDocumentService:
             storage_path=storage_path or "",
 {%- if cookiecutter.enable_teams %}
             organization_id=organization_id,
+{%- endif %}
+{%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}
+            knowledge_base_id=knowledge_base_id,
 {%- endif %}
         )
 
@@ -127,6 +133,9 @@ class RAGDocumentService:
         vector_store: Any,
 {%- if cookiecutter.enable_teams %}
         organization_id: UUID | None = None,
+{%- endif %}
+{%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}
+        knowledge_base_id: UUID | None = None,
 {%- endif %}
     ) -> RAGIngestResponse:
         """Validate, persist, and queue an uploaded file for ingestion.
@@ -164,6 +173,9 @@ class RAGDocumentService:
             storage_path=storage_path,
 {%- if cookiecutter.enable_teams %}
             organization_id=organization_id,
+{%- endif %}
+{%- if cookiecutter.enable_teams and cookiecutter.use_jwt %}
+            knowledge_base_id=knowledge_base_id,
 {%- endif %}
         )
         doc_id = rag_doc.id

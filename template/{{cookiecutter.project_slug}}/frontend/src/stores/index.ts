@@ -9,5 +9,5 @@ export { useFilePreviewStore } from "./file-preview-store";
 export { useOrgStore } from "./org-store";
 {%- endif %}
 {%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
-export { useKBPanelStore } from "./kb-panel-store";
+export { useKBSelectionStore } from "./kb-selection-store";
 {%- endif %}

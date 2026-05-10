@@ -125,6 +125,14 @@ class AgentSession:
                 str(self.user.id),
 {%- endif %}
 {%- endif %}
+                override_kb_ids=(
+                    [str(i) for i in data.get("active_knowledge_base_ids", []) or []]
+                    if isinstance(data.get("active_knowledge_base_ids"), list)
+                    else None
+                ),
+{%- if cookiecutter.enable_teams and cookiecutter.use_database %}
+                organization_id=str(organization_id) if organization_id else None,
+{%- endif %}
             )
 {%- endif %}
 
@@ -439,6 +447,14 @@ class AgentSession:
                 str(self.user.id),
 {%- endif %}
 {%- endif %}
+                override_kb_ids=(
+                    [str(i) for i in data.get("active_knowledge_base_ids", []) or []]
+                    if isinstance(data.get("active_knowledge_base_ids"), list)
+                    else None
+                ),
+{%- if cookiecutter.enable_teams and cookiecutter.use_database %}
+                organization_id=str(organization_id) if organization_id else None,
+{%- endif %}
             )
             kb_token = _active_kb_collections.set(kb_names)
             try:
@@ -724,6 +740,14 @@ class AgentSession:
                 str(self.user.id),
 {%- endif %}
 {%- endif %}
+                override_kb_ids=(
+                    [str(i) for i in data.get("active_knowledge_base_ids", []) or []]
+                    if isinstance(data.get("active_knowledge_base_ids"), list)
+                    else None
+                ),
+{%- if cookiecutter.enable_teams and cookiecutter.use_database %}
+                organization_id=str(organization_id) if organization_id else None,
+{%- endif %}
             )
             kb_token = _active_kb_collections.set(kb_names)
             try:
@@ -1001,6 +1025,14 @@ class AgentSession:
 {%- else %}
                 str(self.user.id),
 {%- endif %}
+{%- endif %}
+                override_kb_ids=(
+                    [str(i) for i in data.get("active_knowledge_base_ids", []) or []]
+                    if isinstance(data.get("active_knowledge_base_ids"), list)
+                    else None
+                ),
+{%- if cookiecutter.enable_teams and cookiecutter.use_database %}
+                organization_id=str(organization_id) if organization_id else None,
 {%- endif %}
             )
             kb_token = _active_kb_collections.set(kb_names)
@@ -1350,6 +1382,14 @@ class AgentSession:
 {%- else %}
                 str(self.user.id),
 {%- endif %}
+{%- endif %}
+                override_kb_ids=(
+                    [str(i) for i in data.get("active_knowledge_base_ids", []) or []]
+                    if isinstance(data.get("active_knowledge_base_ids"), list)
+                    else None
+                ),
+{%- if cookiecutter.enable_teams and cookiecutter.use_database %}
+                organization_id=str(organization_id) if organization_id else None,
 {%- endif %}
             )
             kb_token = _active_kb_collections.set(kb_names)
@@ -1732,6 +1772,14 @@ class AgentSession:
 {%- else %}
                 str(self.user.id),
 {%- endif %}
+{%- endif %}
+                override_kb_ids=(
+                    [str(i) for i in data.get("active_knowledge_base_ids", []) or []]
+                    if isinstance(data.get("active_knowledge_base_ids"), list)
+                    else None
+                ),
+{%- if cookiecutter.enable_teams and cookiecutter.use_database %}
+                organization_id=str(organization_id) if organization_id else None,
 {%- endif %}
             )
             kb_token = _active_kb_collections.set(kb_names)

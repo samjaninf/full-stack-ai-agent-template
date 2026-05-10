@@ -61,6 +61,7 @@ async def create(
     storage_path: str,
     status: str = "processing",
     organization_id: UUID | None = None,
+    knowledge_base_id: UUID | None = None,
 ) -> RAGDocument:
     """Create a new RAG document record."""
     doc = RAGDocument(
@@ -71,6 +72,7 @@ async def create(
         storage_path=storage_path,
         status=status,
         organization_id=organization_id,
+        knowledge_base_id=knowledge_base_id,
     )
     db.add(doc)
     await db.flush()

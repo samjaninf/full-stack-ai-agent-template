@@ -8,4 +8,4 @@ export { CopyButton } from "./copy-button";
 export { MarkdownContent } from "./markdown-content";
 export { FilePreviewPanel } from "./file-preview-panel";
 export { ConversationSidebar } from "./conversation-sidebar";
-export { KBPanel } from "./kb-panel";
+export { KBSelector } from "./kb-selector";

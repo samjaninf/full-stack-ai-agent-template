@@ -8,6 +8,6 @@ export { useAdminConversations } from "./use-admin-conversations";
 export { useOrganizations } from "./use-organizations";
 export { useMembers } from "./use-members";
 export { useInvitations } from "./use-invitations";
-export { useKnowledgeBases } from "./use-knowledge-bases";
+export { useKnowledgeBases, useKBDetail } from "./use-knowledge-bases";
 export { useBilling, useSubscription, useCredits, usePlans, useInvoices } from "./use-billing";
 export { useSlashCommands, isBuiltinEnabled, BUILTIN_COMMAND_LIST } from "./use-slash-commands";

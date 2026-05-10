@@ -6,10 +6,13 @@ import { ChatEmptyState } from "./chat-empty-state";
 import { ChatInput } from "./chat-input";
 import { ChatSettings } from "./chat-settings";
 import { FilePreviewPanel } from "./file-preview-panel";
+{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+import { KBSelector } from "./kb-selector";
+{%- endif %}
 import { MessageList } from "./message-list";
 import { PendingMessages } from "./pending-messages";
 import { ToolApprovalDialog } from "./tool-approval-dialog";
-import { ChevronDown, Check, Database } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -21,9 +24,6 @@ import { useConversationStore, useChatStore } from "@/stores";
 import { useConversations } from "@/hooks";
 {%- if cookiecutter.use_auth %}
 import { useSlashCommands } from "@/hooks";
-{%- endif %}
-{%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
-import { useKBPanelStore } from "@/stores";
 {%- endif %}
 
 export function ChatContainer() {
@@ -159,9 +159,6 @@ function AuthenticatedChatContainer() {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
-  {%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
-  const { toggle: toggleKBPanel } = useKBPanelStore();
-  {%- endif %}
   {%- if cookiecutter.use_auth %}
   const { commands: slashCommands } = useSlashCommands();
   {%- endif %}
@@ -225,9 +222,6 @@ function AuthenticatedChatContainer() {
       scrollContainerRef={scrollContainerRef}
       pendingApproval={pendingApproval}
       onResumeDecisions={sendResumeDecisions}
-      {%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
-      onToggleKBPanel={toggleKBPanel}
-      {%- endif %}
     />
   );
 }
@@ -306,7 +300,6 @@ interface ChatUIProps {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   pendingApproval?: PendingApproval | null;
   onResumeDecisions?: (decisions: Decision[]) => void;
-  onToggleKBPanel?: () => void;
 }
 
 function ChatUI({
@@ -327,7 +320,6 @@ function ChatUI({
   scrollContainerRef,
   pendingApproval,
   onResumeDecisions,
-  onToggleKBPanel,
 }: ChatUIProps) {
   return (
     <div className="flex h-full w-full">
@@ -386,18 +378,11 @@ function ChatUI({
                 />
                 {isConnected ? "Live" : "Offline"}
               </span>
-              {onToggleKBPanel && (
-                <button
-                  onClick={onToggleKBPanel}
-                  className="text-foreground/55 hover:bg-foreground/5 hover:text-foreground inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors"
-                  title="Toggle knowledge bases"
-                >
-                  <Database className="h-3.5 w-3.5" />
-                  <span className="hidden sm:inline">KB</span>
-                </button>
-              )}
             </div>
             <div className="flex items-center gap-1">
+              {%- if cookiecutter.enable_teams and cookiecutter.enable_rag %}
+              <KBSelector />
+              {%- endif %}
               {onModelChange && <ModelSelector onChange={onModelChange} />}
               {onTemperatureChange && onThinkingEffortChange && (
                 <ChatSettings

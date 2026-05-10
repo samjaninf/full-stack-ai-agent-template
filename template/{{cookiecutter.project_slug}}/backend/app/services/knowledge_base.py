@@ -71,6 +71,34 @@ class KnowledgeBaseService:
             logger.warning("KB collection resolution failed: %s", exc)
             return []
 
+    async def resolve_collection_names_for_ids(
+        self,
+        *,
+        kb_ids: list[UUID],
+        user_id: UUID | None,
+        organization_id: UUID | None,
+    ) -> list[str]:
+        """Resolve a client-supplied list of KB IDs to collection names.
+
+        Used when the conversation hasn't been saved yet so we can't read
+        ``Conversation.active_knowledge_base_ids`` from DB. Intersects with
+        the caller's accessible KBs — clients can never reach a KB they
+        don't own (or that isn't shared with their org).
+        """
+        if not kb_ids:
+            return []
+        try:
+            accessible = await knowledge_base_repo.get_accessible(
+                self.db,
+                user_id=user_id,
+                organization_id=organization_id,
+            )
+            wanted = {str(i) for i in kb_ids}
+            return [kb.collection_name for kb in accessible if str(kb.id) in wanted]
+        except Exception as exc:
+            logger.warning("KB collection override resolution failed: %s", exc)
+            return []
+
     async def get(
         self,
         kb_id: UUID,

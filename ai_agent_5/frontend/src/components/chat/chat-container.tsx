@@ -6,10 +6,11 @@ import { ChatEmptyState } from "./chat-empty-state";
 import { ChatInput } from "./chat-input";
 import { ChatSettings } from "./chat-settings";
 import { FilePreviewPanel } from "./file-preview-panel";
+import { KBSelector } from "./kb-selector";
 import { MessageList } from "./message-list";
 import { PendingMessages } from "./pending-messages";
 import { ToolApprovalDialog } from "./tool-approval-dialog";
-import { ChevronDown, Check, Database } from "lucide-react";
+import { ChevronDown, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -19,7 +20,6 @@ import {
 import type { PendingApproval, Decision } from "@/types";
 import { useConversationStore, useChatStore } from "@/stores";
 import { useConversations, useSlashCommands } from "@/hooks";
-import { useKBPanelStore } from "@/stores";
 
 export function ChatContainer() {
   return <AuthenticatedChatContainer />;
@@ -155,7 +155,6 @@ function AuthenticatedChatContainer() {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
-  const { toggle: toggleKBPanel } = useKBPanelStore();
   const { commands: slashCommands } = useSlashCommands();
 
   const handleRegenerate = useCallback(
@@ -215,7 +214,6 @@ function AuthenticatedChatContainer() {
       scrollContainerRef={scrollContainerRef}
       pendingApproval={pendingApproval}
       onResumeDecisions={sendResumeDecisions}
-      onToggleKBPanel={toggleKBPanel}
     />
   );
 }
@@ -294,7 +292,6 @@ interface ChatUIProps {
   scrollContainerRef: React.RefObject<HTMLDivElement | null>;
   pendingApproval?: PendingApproval | null;
   onResumeDecisions?: (decisions: Decision[]) => void;
-  onToggleKBPanel?: () => void;
 }
 
 function ChatUI({
@@ -315,7 +312,6 @@ function ChatUI({
   scrollContainerRef,
   pendingApproval,
   onResumeDecisions,
-  onToggleKBPanel,
 }: ChatUIProps) {
   return (
     <div className="flex h-full w-full">
@@ -374,18 +370,9 @@ function ChatUI({
                   />
                   {isConnected ? "Live" : "Offline"}
                 </span>
-                {onToggleKBPanel && (
-                  <button
-                    onClick={onToggleKBPanel}
-                    className="text-foreground/55 hover:bg-foreground/5 hover:text-foreground inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium transition-colors"
-                    title="Toggle knowledge bases"
-                  >
-                    <Database className="h-3.5 w-3.5" />
-                    <span className="hidden sm:inline">KB</span>
-                  </button>
-                )}
               </div>
               <div className="flex items-center gap-1">
+                <KBSelector />
                 {onModelChange && <ModelSelector onChange={onModelChange} />}
                 {onTemperatureChange && onThinkingEffortChange && (
                   <ChatSettings
