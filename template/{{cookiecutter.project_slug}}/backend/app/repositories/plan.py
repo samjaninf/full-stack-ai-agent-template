@@ -9,7 +9,7 @@ from app.db.models.plan import Plan, Price
 
 
 async def get_plan_by_code(db: AsyncSession, code: str) -> Plan | None:
-    result = await db.execute(select(Plan).where(Plan.code == code, Plan.is_active == True))  # noqa: E712
+    result = await db.execute(select(Plan).where(Plan.code == code, Plan.is_active))
     return result.scalar_one_or_none()
 
 
@@ -18,7 +18,7 @@ async def get_plan_by_id(db: AsyncSession, plan_id: uuid.UUID) -> Plan | None:
 
 
 async def list_active_plans(db: AsyncSession) -> list[Plan]:
-    result = await db.execute(select(Plan).where(Plan.is_active == True).order_by(Plan.sort_order))  # noqa: E712
+    result = await db.execute(select(Plan).where(Plan.is_active).order_by(Plan.sort_order))
     return list(result.scalars().all())
 
 
@@ -68,11 +68,11 @@ from app.db.models.plan import Plan, Price
 
 
 def get_plan_by_code(db: Session, code: str) -> Plan | None:
-    return db.execute(select(Plan).where(Plan.code == code, Plan.is_active == True)).scalar_one_or_none()  # noqa: E712
+    return db.execute(select(Plan).where(Plan.code == code, Plan.is_active)).scalar_one_or_none()
 
 
 def list_active_plans(db: Session) -> list[Plan]:
-    return list(db.execute(select(Plan).where(Plan.is_active == True).order_by(Plan.sort_order)).scalars().all())  # noqa: E712
+    return list(db.execute(select(Plan).where(Plan.is_active).order_by(Plan.sort_order)).scalars().all())
 
 
 def get_price_by_id(db: Session, price_id: str) -> Price | None:

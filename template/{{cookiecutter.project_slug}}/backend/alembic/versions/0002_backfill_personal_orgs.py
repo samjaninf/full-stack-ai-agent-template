@@ -79,7 +79,6 @@ def upgrade() -> None:
     )
 
     users = conn.execute(sa.select(users_t.c.id, users_t.c.email)).fetchall()
-    now = sa.func.now()
 
     for user_id, email in users:
         # Check if personal org already exists for this user
