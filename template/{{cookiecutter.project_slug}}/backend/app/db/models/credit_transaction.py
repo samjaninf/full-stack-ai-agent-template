@@ -13,7 +13,7 @@ from sqlmodel import Field, SQLModel
 from app.db.base import TimestampMixin
 
 
-class CreditTransactionType(str, enum.Enum):
+class CreditTransactionType(enum.StrEnum):
     GRANT_SUBSCRIPTION = "grant_subscription"
     GRANT_TRIAL = "grant_trial"
     PURCHASE_TOPUP = "purchase_topup"
@@ -83,7 +83,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, TimestampMixin
 
 
-class CreditTransactionType(str, enum.Enum):
+class CreditTransactionType(enum.StrEnum):
     GRANT_SUBSCRIPTION = "grant_subscription"
     GRANT_TRIAL = "grant_trial"
     PURCHASE_TOPUP = "purchase_topup"
@@ -138,7 +138,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, TimestampMixin
 
 
-class CreditTransactionType(str, enum.Enum):
+class CreditTransactionType(enum.StrEnum):
     GRANT_SUBSCRIPTION = "grant_subscription"
     GRANT_TRIAL = "grant_trial"
     PURCHASE_TOPUP = "purchase_topup"
@@ -192,7 +192,7 @@ from typing import Optional
 from beanie import Document
 
 
-class CreditTransactionType(str, enum.Enum):
+class CreditTransactionType(enum.StrEnum):
     GRANT_SUBSCRIPTION = "grant_subscription"
     GRANT_TRIAL = "grant_trial"
     PURCHASE_TOPUP = "purchase_topup"

@@ -225,7 +225,7 @@ class TestMemberRepository:
         mock_member = MagicMock()
         mock_member.role = "member"
 
-        result = await member_repo.update_role(mock_db, mock_member, role="admin")
+        await member_repo.update_role(mock_db, mock_member, role="admin")
 
         assert mock_member.role == "admin"
         mock_db.flush.assert_called_once()
@@ -294,7 +294,7 @@ class TestInvitationRepository:
         mock_db.add.side_effect = capture_add
         mock_db.refresh.side_effect = lambda obj: None
 
-        result = await invitation_repo.create(
+        await invitation_repo.create(
             mock_db,
             organization_id=uuid.uuid4(),
             email="bob@example.com",

@@ -14,14 +14,14 @@ from sqlmodel import Field, Relationship, SQLModel
 from app.db.base import TimestampMixin
 
 
-class OrgRole(str, enum.Enum):
+class OrgRole(enum.StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
     VIEWER = "viewer"
 
 
-class InvitationStatus(str, enum.Enum):
+class InvitationStatus(enum.StrEnum):
     PENDING = "pending"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
@@ -211,14 +211,14 @@ from sqlalchemy.sql import func, text
 from app.db.base import Base, TimestampMixin
 
 
-class OrgRole(str, enum.Enum):
+class OrgRole(enum.StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
     VIEWER = "viewer"
 
 
-class InvitationStatus(str, enum.Enum):
+class InvitationStatus(enum.StrEnum):
     PENDING = "pending"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
@@ -372,14 +372,14 @@ from sqlmodel import Field, Relationship, SQLModel
 from app.db.base import TimestampMixin
 
 
-class OrgRole(str, enum.Enum):
+class OrgRole(enum.StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
     VIEWER = "viewer"
 
 
-class InvitationStatus(str, enum.Enum):
+class InvitationStatus(enum.StrEnum):
     PENDING = "pending"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
@@ -520,14 +520,14 @@ from sqlalchemy.sql import func
 from app.db.base import Base, TimestampMixin
 
 
-class OrgRole(str, enum.Enum):
+class OrgRole(enum.StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
     VIEWER = "viewer"
 
 
-class InvitationStatus(str, enum.Enum):
+class InvitationStatus(enum.StrEnum):
     PENDING = "pending"
     ACCEPTED = "accepted"
     REJECTED = "rejected"
@@ -640,14 +640,14 @@ from beanie import Document
 from pydantic import EmailStr, Field
 
 
-class OrgRole(str, enum.Enum):
+class OrgRole(enum.StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
     VIEWER = "viewer"
 
 
-class InvitationStatus(str, enum.Enum):
+class InvitationStatus(enum.StrEnum):
     PENDING = "pending"
     ACCEPTED = "accepted"
     REJECTED = "rejected"

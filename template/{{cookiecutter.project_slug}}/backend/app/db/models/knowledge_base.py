@@ -12,7 +12,7 @@ from sqlmodel import Field, SQLModel
 from app.db.base import TimestampMixin
 
 
-class KBScope(str, enum.Enum):
+class KBScope(enum.StrEnum):
     PERSONAL = "personal"
     ORG = "org"
     APP = "app"
@@ -73,7 +73,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, TimestampMixin
 
 
-class KBScope(str, enum.Enum):
+class KBScope(enum.StrEnum):
     PERSONAL = "personal"
     ORG = "org"
     APP = "app"
@@ -118,7 +118,7 @@ from sqlmodel import Field, SQLModel
 from app.db.base import TimestampMixin
 
 
-class KBScope(str, enum.Enum):
+class KBScope(enum.StrEnum):
     PERSONAL = "personal"
     ORG = "org"
     APP = "app"
@@ -175,7 +175,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, TimestampMixin
 
 
-class KBScope(str, enum.Enum):
+class KBScope(enum.StrEnum):
     PERSONAL = "personal"
     ORG = "org"
     APP = "app"
@@ -220,7 +220,7 @@ from pydantic import Field
 from app.db.base import TimestampMixin
 
 
-class KBScope(str, enum.Enum):
+class KBScope(enum.StrEnum):
     PERSONAL = "personal"
     ORG = "org"
     APP = "app"

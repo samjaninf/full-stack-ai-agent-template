@@ -17,7 +17,7 @@ from app.services.email.templates import render_email
 logger = logging.getLogger(__name__)
 
 
-class EmailKey(str, enum.Enum):
+class EmailKey(enum.StrEnum):
     WELCOME = "welcome"
     EMAIL_VERIFICATION = "email_verification"
     MAGIC_LINK = "magic_link"
@@ -37,7 +37,7 @@ class EmailKey(str, enum.Enum):
     NEWSLETTER_WELCOME = "newsletter_welcome"
 
 
-class EmailCategory(str, enum.Enum):
+class EmailCategory(enum.StrEnum):
     TRANSACTIONAL = "transactional"
     LIFECYCLE = "lifecycle"
     MARKETING = "marketing"

@@ -356,9 +356,8 @@ class MemberService:
         if not membership:
             raise NotFoundError(message="Organization not found", details={"org_id": organization_id})
 
-        if membership.role == OrgRole.OWNER.value:
-            if await member_repo.count_for_org(organization_id) > 1:
-                raise BadRequestError(message="Transfer ownership before leaving the organization")
+        if membership.role == OrgRole.OWNER.value and await member_repo.count_for_org(organization_id) > 1:
+            raise BadRequestError(message="Transfer ownership before leaving the organization")
 
         await member_repo.delete(membership)
 

@@ -228,18 +228,18 @@ def _sync_from_stripe(db: Session, stripe_sub: stripe.Subscription) -> Subscript
     if not org:
         raise ValueError(f"No org found for customer {stripe_sub.customer}")
 
-    fields = dict(
-        stripe_subscription_id=stripe_sub.id,
-        stripe_customer_id=stripe_sub.customer,
-        stripe_item_id=stripe_sub["items"]["data"][0]["id"],
-        price_id=str(price.id) if price else None,
-        organization_id=str(org.id),
-        seats_quantity=stripe_sub["items"]["data"][0].get("quantity", 1),
-        status=stripe_sub.status,
-        current_period_start=datetime.fromtimestamp(stripe_sub.current_period_start, UTC),
-        current_period_end=datetime.fromtimestamp(stripe_sub.current_period_end, UTC),
-        cancel_at_period_end=stripe_sub.cancel_at_period_end,
-    )
+    fields = {
+        "stripe_subscription_id": stripe_sub.id,
+        "stripe_customer_id": stripe_sub.customer,
+        "stripe_item_id": stripe_sub["items"]["data"][0]["id"],
+        "price_id": str(price.id) if price else None,
+        "organization_id": str(org.id),
+        "seats_quantity": stripe_sub["items"]["data"][0].get("quantity", 1),
+        "status": stripe_sub.status,
+        "current_period_start": datetime.fromtimestamp(stripe_sub.current_period_start, UTC),
+        "current_period_end": datetime.fromtimestamp(stripe_sub.current_period_end, UTC),
+        "cancel_at_period_end": stripe_sub.cancel_at_period_end,
+    }
 
     existing = sub_repo.get_by_stripe_id(db, stripe_sub.id)
     if existing:

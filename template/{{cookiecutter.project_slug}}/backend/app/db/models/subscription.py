@@ -13,7 +13,7 @@ from sqlmodel import Field, Relationship, SQLModel
 from app.db.base import TimestampMixin
 
 
-class SubscriptionStatus(str, enum.Enum):
+class SubscriptionStatus(enum.StrEnum):
     TRIALING = "trialing"
     ACTIVE = "active"
     PAST_DUE = "past_due"
@@ -55,7 +55,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.db.base import Base, TimestampMixin
 
 
-class SubscriptionStatus(str, enum.Enum):
+class SubscriptionStatus(enum.StrEnum):
     TRIALING = "trialing"
     ACTIVE = "active"
     PAST_DUE = "past_due"
@@ -94,7 +94,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base, TimestampMixin
 
 
-class SubscriptionStatus(str, enum.Enum):
+class SubscriptionStatus(enum.StrEnum):
     TRIALING = "trialing"
     ACTIVE = "active"
     PAST_DUE = "past_due"
@@ -134,7 +134,7 @@ from typing import Optional
 from beanie import Document
 
 
-class SubscriptionStatus(str, enum.Enum):
+class SubscriptionStatus(enum.StrEnum):
     TRIALING = "trialing"
     ACTIVE = "active"
     PAST_DUE = "past_due"
