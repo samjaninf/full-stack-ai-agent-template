@@ -170,11 +170,12 @@ class CohereReranker(BaseReranker):
             logger.warning("[RERANKER] Cohere API key not set, reranker will be disabled")
             return
         
-        # Just verify we can import the client
-        try:
-            from cohere import AsyncClient
+        # Just verify the cohere package is available (no client needed here)
+        import importlib.util
+
+        if importlib.util.find_spec("cohere") is not None:
             logger.info(f"[RERANKER] Cohere reranker configured with model: {self.model}")
-        except ImportError:
+        else:
             logger.warning("[RERANKER] cohere package not installed")
 
 {%- endif %}

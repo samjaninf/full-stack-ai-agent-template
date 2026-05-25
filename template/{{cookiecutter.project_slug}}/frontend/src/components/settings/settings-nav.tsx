@@ -6,7 +6,9 @@ import {
   Bell,
   Palette,
   Shield,
+{%- if cookiecutter.use_auth and cookiecutter.use_ai %}
   Slash,
+{%- endif %}
   UserCircle,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -33,12 +35,14 @@ const ITEMS: NavItem[] = [
     icon: Shield,
     description: "Password, two-factor, danger zone",
   },
+{%- if cookiecutter.use_auth and cookiecutter.use_ai %}
   {
     label: "Slash commands",
     href: "/settings/slash-commands",
     icon: Slash,
     description: "Custom shortcuts + built-in toggles",
   },
+{%- endif %}
   {
     label: "Notifications",
     href: "/settings/notifications",

@@ -173,6 +173,7 @@ async def admin_list_with_counts(
     Returns list of (user, conversation_count) tuples and total count.
     """
     from sqlalchemy import func
+{%- if cookiecutter.use_ai %}
     from app.db.models.conversation import Conversation
 
     conv_count_col = func.count(Conversation.id).label("conversation_count")
@@ -181,6 +182,13 @@ async def admin_list_with_counts(
         .outerjoin(Conversation, Conversation.user_id == User.id)
         .group_by(User.id)
     )
+{%- else %}
+    # No AI/chat in this build — conversation_count is always 0.
+    from sqlalchemy import literal
+
+    conv_count_col = literal(0).label("conversation_count")
+    query = select(User, conv_count_col)
+{%- endif %}
     count_query = select(func.count()).select_from(User)
 
     if search:
@@ -350,6 +358,7 @@ def admin_list_with_counts(
     Returns list of (user, conversation_count) tuples and total count.
     """
     from sqlalchemy import func
+{%- if cookiecutter.use_ai %}
     from app.db.models.conversation import Conversation
 
     conv_count_col = func.count(Conversation.id).label("conversation_count")
@@ -358,6 +367,13 @@ def admin_list_with_counts(
         .outerjoin(Conversation, Conversation.user_id == User.id)
         .group_by(User.id)
     )
+{%- else %}
+    # No AI/chat in this build — conversation_count is always 0.
+    from sqlalchemy import literal
+
+    conv_count_col = literal(0).label("conversation_count")
+    query = select(User, conv_count_col)
+{%- endif %}
     count_query = select(func.count()).select_from(User)
 
     if search:
@@ -501,7 +517,9 @@ async def admin_list_with_counts(
     Returns list of (user, conversation_count) tuples and total count.
     """
     import re
+{%- if cookiecutter.use_ai %}
     from app.db.models.conversation import Conversation
+{%- endif %}
 
     query_filter: dict[str, Any] = {}
     if search:
@@ -526,7 +544,11 @@ async def admin_list_with_counts(
 
     results: list[tuple[User, int]] = []
     for user in users:
+{%- if cookiecutter.use_ai %}
         conv_count = await Conversation.find(Conversation.user_id == str(user.id)).count()
+{%- else %}
+        conv_count = 0
+{%- endif %}
         results.append((user, conv_count))
     return results, total
 

@@ -157,13 +157,28 @@ if not use_ai:
     remove_file(os.path.join(backend_app, "db", "models", "conversation.py"))
     remove_file(os.path.join(backend_app, "repositories", "conversation.py"))
     remove_file(os.path.join(backend_app, "schemas", "conversation.py"))
-    remove_file(os.path.join(backend_app, "schemas", "conversation_share.py"))
     remove_file(os.path.join(backend_app, "schemas", "message_rating.py"))
+    # Conversation sharing — model + repo + service. The *schema* module
+    # (schemas/conversation_share.py) is intentionally KEPT: it also defines
+    # AdminUserRead/AdminUserList, consumed by the always-on admin_users
+    # route. Its conversation-specific schemas are Jinja-guarded by use_ai.
+    remove_file(os.path.join(backend_app, "db", "models", "conversation_share.py"))
+    remove_file(os.path.join(backend_app, "repositories", "conversation_share.py"))
+    remove_file(os.path.join(backend_app, "services", "conversation_share.py"))
+    # Message ratings — model + repo + service (AI-only)
+    remove_file(os.path.join(backend_app, "db", "models", "message_rating.py"))
+    remove_file(os.path.join(backend_app, "repositories", "message_rating.py"))
+    remove_file(os.path.join(backend_app, "services", "message_rating.py"))
     # Chat & conversation routes
     remove_file(os.path.join(backend_app, "api", "routes", "v1", "chat.py"))
     remove_file(os.path.join(backend_app, "api", "routes", "v1", "conversations.py"))
     remove_file(os.path.join(backend_app, "api", "routes", "v1", "message_ratings.py"))
     remove_file(os.path.join(backend_app, "api", "routes", "v1", "me_slash_commands.py"))
+    # AI agent route + admin conversation/rating browsers — AI-only and
+    # import-broken without the conversation/message_rating models.
+    remove_file(os.path.join(backend_app, "api", "routes", "v1", "agent.py"))
+    remove_file(os.path.join(backend_app, "api", "routes", "v1", "admin_conversations.py"))
+    remove_file(os.path.join(backend_app, "api", "routes", "v1", "admin_ratings.py"))
     # Slash commands model / repo / schema / service
     remove_file(os.path.join(backend_app, "db", "models", "user_slash_command.py"))
     remove_file(os.path.join(backend_app, "repositories", "user_slash_command.py"))
@@ -171,15 +186,47 @@ if not use_ai:
     remove_file(os.path.join(backend_app, "services", "user_slash_command.py"))
     # Logfire (AI observability) — only remove if no other use
     # Keep logfire_setup.py if logfire is enabled for non-AI tracing (FastAPI/DB)
-    # Frontend chat UI
+    # Frontend chat UI + AI-only admin pages / API proxies / data hooks
     if use_frontend:
         frontend_src = os.path.join(os.getcwd(), "frontend", "src")
-        remove_dir(os.path.join(frontend_src, "app", "[locale]", "chat"))
+        remove_dir(os.path.join(frontend_src, "app", "[locale]", "(dashboard)", "chat"))
         remove_dir(os.path.join(frontend_src, "components", "chat"))
         remove_file(os.path.join(frontend_src, "components", "dashboard", "conversation-list.tsx"))
-        # Admin conversations / ratings pages
-        remove_dir(os.path.join(frontend_src, "app", "[locale]", "admin", "conversations"))
-        remove_dir(os.path.join(frontend_src, "app", "[locale]", "admin", "ratings"))
+        # Admin conversations / ratings pages — route group is "(dashboard)"
+        remove_dir(
+            os.path.join(
+                frontend_src, "app", "[locale]", "(dashboard)", "admin", "conversations"
+            )
+        )
+        remove_dir(
+            os.path.join(frontend_src, "app", "[locale]", "(dashboard)", "admin", "ratings")
+        )
+        # Next.js API proxies for the removed admin endpoints
+        remove_dir(os.path.join(frontend_src, "app", "api", "admin", "conversations"))
+        remove_dir(os.path.join(frontend_src, "app", "api", "admin", "ratings"))
+        # Conversation / rating data hooks
+        remove_file(os.path.join(frontend_src, "hooks", "use-conversations.ts"))
+        remove_file(os.path.join(frontend_src, "hooks", "use-conversation-shares.ts"))
+        remove_file(os.path.join(frontend_src, "hooks", "use-admin-conversations.ts"))
+        # Slash-commands frontend feature — AI/chat only; its hook/manager
+        # import from the (now-removed) components/chat module. (Also removed
+        # by the no-auth block, but that doesn't fire when only AI is off.)
+        remove_dir(os.path.join(frontend_src, "app", "api", "me", "slash-commands"))
+        remove_file(os.path.join(frontend_src, "lib", "slash-commands-api.ts"))
+        remove_file(os.path.join(frontend_src, "hooks", "use-slash-commands.ts"))
+        remove_file(
+            os.path.join(frontend_src, "components", "settings", "slash-commands-manager.tsx")
+        )
+        remove_dir(
+            os.path.join(
+                frontend_src,
+                "app",
+                "[locale]",
+                "(dashboard)",
+                "settings",
+                "slash-commands",
+            )
+        )
 
 # --- Webhook files ---
 if not enable_webhooks or not use_database:
@@ -203,10 +250,12 @@ if not enable_session_management:
 
 
 # --- Admin panel: SQLAdmin UI (requires SQLAlchemy, not SQLModel) ---
-# This gates ONLY the SQLAdmin integration (`admin.py`). The admin REST routes
-# (`admin_users.py`, `admin_conversations.py`, `admin_ratings.py`,
-# `admin_stats.py`) and the dashboard pages stay regardless — they're always
-# useful for the workspace admin role.
+# This gates ONLY the SQLAdmin integration (`admin.py`). The core admin REST
+# routes (`admin_users.py`, `admin_stats.py`) and their dashboard pages stay
+# regardless — they're always useful for the workspace admin role. The AI
+# admin routes (`admin_conversations.py`, `admin_ratings.py`) are removed in
+# the no-AI block above; `admin_stats.py` keeps working because its
+# conversation/message metrics are Jinja-guarded by use_ai.
 if not enable_admin_panel or (not use_postgresql and not use_sqlite) or not use_sqlalchemy:
     remove_file(os.path.join(backend_app, "admin.py"))
 
@@ -277,6 +326,16 @@ if not enable_rag:
         # is gone, so drop them entirely.
         remove_dir(os.path.join(frontend_src, "components", "rag"))
         remove_file(os.path.join(frontend_src, "components", "chat", "kb-panel.tsx"))
+        # Knowledge-base UI is a RAG feature — its page/hook/components import
+        # @/lib/rag-api + @/components/rag (just removed). The KB nav entries
+        # are already gated `enable_teams and enable_rag`, so drop the files
+        # too (otherwise `next build` type-checks orphaned, broken imports).
+        # Mirrors the teams-off KB removal block.
+        remove_dir(os.path.join(frontend_src, "components", "kb"))
+        remove_dir(os.path.join(frontend_src, "app", "api", "kb"))
+        remove_dir(os.path.join(frontend_src, "app", "[locale]", "(dashboard)", "kb"))
+        remove_file(os.path.join(frontend_src, "hooks", "use-knowledge-bases.ts"))
+        remove_file(os.path.join(frontend_src, "types", "knowledge-base.ts"))
 else:
     # RAG enabled — remove optional components if not enabled
     rag_dir = os.path.join(backend_app, "services", "rag")

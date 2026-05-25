@@ -22,7 +22,9 @@ from app.db.models.user import User, UserRole
 {%- if cookiecutter.enable_session_management %}
 from app.db.models.session import Session
 {%- endif %}
+{%- if cookiecutter.use_ai %}
 from app.db.models.conversation import Conversation, Message, ToolCall
+{%- endif %}
 {%- if cookiecutter.enable_webhooks %}
 from app.db.models.webhook import Webhook, WebhookDelivery
 {%- endif %}
@@ -386,10 +388,12 @@ CUSTOM_MODEL_CONFIGS: dict[type, dict[str, Any]] = {
         "can_create": False,  # Sessions are created via login
     },
 {%- endif %}
+{%- if cookiecutter.use_ai %}
     ToolCall: {
         "icon": "fa-solid fa-wrench",
         "can_create": False,  # Tool calls are created by the agent
     },
+{%- endif %}
 {%- if cookiecutter.enable_webhooks %}
     Webhook: {
         "icon": "fa-solid fa-link",

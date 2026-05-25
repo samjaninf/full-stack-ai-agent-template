@@ -6,8 +6,10 @@ import {
   Activity,
   CreditCard,
   LayoutDashboard,
+{%- if cookiecutter.use_ai %}
   MessageSquare,
   Star,
+{%- endif %}
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
@@ -24,8 +26,10 @@ interface NavItem {
 const ITEMS: NavItem[] = [
   { label: "Overview", href: "/admin", icon: LayoutDashboard },
   { label: "Users", href: "/admin/users", icon: Users },
+{%- if cookiecutter.use_ai %}
   { label: "Conversations", href: "/admin/conversations", icon: MessageSquare },
   { label: "Ratings", href: "/admin/ratings", icon: Star },
+{%- endif %}
   { label: "Stripe events", href: "/admin/stripe-events", icon: CreditCard },
   { label: "System health", href: "/admin/system", icon: Activity },
 ];

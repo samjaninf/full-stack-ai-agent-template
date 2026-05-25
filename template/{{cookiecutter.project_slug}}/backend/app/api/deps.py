@@ -70,7 +70,7 @@ from app.services.session import SessionService
 {%- if cookiecutter.enable_webhooks and cookiecutter.use_database %}
 from app.services.webhook import WebhookService
 {%- endif %}
-{%- if cookiecutter.use_database %}
+{%- if cookiecutter.use_ai %}
 from app.services.conversation import ConversationService
 {%- endif %}
 {%- if cookiecutter.use_jwt %}
@@ -131,7 +131,7 @@ WebhookSvc = Annotated[WebhookService, Depends(get_webhook_service)]
 {%- endif %}
 
 
-{%- if cookiecutter.use_database %}
+{%- if cookiecutter.use_ai %}
 {%- if cookiecutter.use_postgresql or cookiecutter.use_sqlite %}
 
 
@@ -201,7 +201,7 @@ def get_channel_bot_service() -> ChannelBotService:
 
 ChannelBotSvc = Annotated[ChannelBotService, Depends(get_channel_bot_service)]
 {%- endif %}
-{%- if cookiecutter.use_database and cookiecutter.use_jwt %}
+{%- if cookiecutter.use_ai and cookiecutter.use_jwt %}
 
 # Message rating service
 from app.services.message_rating import MessageRatingService
@@ -1112,7 +1112,7 @@ def get_contact_service() -> ContactService:
 
 ContactSvc = Annotated[ContactService, Depends(get_contact_service)]
 {%- endif %}
-{%- if cookiecutter.use_auth and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
+{%- if cookiecutter.use_auth and cookiecutter.use_ai and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 from app.services.user_slash_command import UserSlashCommandService
 
 

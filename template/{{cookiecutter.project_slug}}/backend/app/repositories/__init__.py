@@ -10,7 +10,7 @@ from app.repositories import user as user_repo
 
 from app.repositories import session as session_repo
 {%- endif %}
-{%- if cookiecutter.use_database %}
+{%- if cookiecutter.use_ai %}
 
 from app.repositories import conversation as conversation_repo
 {%- endif %}
@@ -28,7 +28,7 @@ from app.repositories import sync_source as sync_source_repo
 
 from app.repositories import chat_file as chat_file_repo
 {%- endif %}
-{%- if cookiecutter.use_database and cookiecutter.use_jwt %}
+{%- if cookiecutter.use_ai and cookiecutter.use_jwt %}
 
 from app.repositories import conversation_share as conversation_share_repo
 from app.repositories import message_rating as message_rating_repo
@@ -53,7 +53,7 @@ from app.repositories import invitation as invitation_repo
 from app.repositories import member as member_repo
 from app.repositories import organization as organization_repo
 {%- endif %}
-{%- if cookiecutter.use_auth and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
+{%- if cookiecutter.use_auth and cookiecutter.use_ai and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 
 from app.repositories import user_slash_command as user_slash_command_repo
 {%- endif %}
@@ -65,7 +65,7 @@ __all__ = [
 {%- if cookiecutter.enable_session_management and cookiecutter.use_jwt %}
     "session_repo",
 {%- endif %}
-{%- if cookiecutter.use_database %}
+{%- if cookiecutter.use_ai %}
     "conversation_repo",
 {%- endif %}
 {%- if cookiecutter.enable_webhooks and cookiecutter.use_database %}
@@ -79,7 +79,7 @@ __all__ = [
 {%- if (cookiecutter.use_postgresql or cookiecutter.use_sqlite) and cookiecutter.use_jwt %}
     "chat_file_repo",
 {%- endif %}
-{%- if cookiecutter.use_database and cookiecutter.use_jwt %}
+{%- if cookiecutter.use_ai and cookiecutter.use_jwt %}
     "conversation_share_repo",
     "message_rating_repo",
 {%- endif %}
@@ -99,7 +99,7 @@ __all__ = [
     "member_repo",
     "invitation_repo",
 {%- endif %}
-{%- if cookiecutter.use_auth and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
+{%- if cookiecutter.use_auth and cookiecutter.use_ai and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
     "user_slash_command_repo",
 {%- endif %}
 ]

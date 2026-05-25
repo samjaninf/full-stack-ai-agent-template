@@ -505,6 +505,13 @@ class ProjectConfig(BaseModel):
             )
         if not self.use_ai and self.enable_langsmith:
             raise ValueError("--langsmith requires an AI framework. Quick fix: drop --langsmith.")
+        if not self.use_ai and (self.use_slack or self.use_telegram):
+            raise ValueError(
+                "Slack/Telegram channels require an AI framework — a channel bot exists "
+                "only to relay messages to the agent (it calls AgentInvocationService). "
+                "Quick fix: set --ai-framework pydantic_ai (or any other), or drop "
+                "--slack/--telegram."
+            )
 
         # Tenancy: multi_org / platform imply teams
         if self.tenancy != TenancyMode.SINGLE and not self.enable_teams:

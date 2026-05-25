@@ -16,7 +16,9 @@ from typing import Any
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+{%- if cookiecutter.use_ai %}
 from app.db.models.conversation import Conversation, Message
+{%- endif %}
 from app.db.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -53,13 +55,18 @@ class AdminService:
         except Exception:  # noqa: BLE001
             logger.exception("admin_stats_active_users_query_failed")
 
-        # Conversations + messages totals
+        # Conversations + messages totals — 0 when AI/chat is disabled
+{%- if cookiecutter.use_ai %}
         total_conversations = (
             await self.db.execute(select(func.count(Conversation.id)))
         ).scalar_one()
         total_messages = (
             await self.db.execute(select(func.count(Message.id)))
         ).scalar_one()
+{%- else %}
+        total_conversations = 0
+        total_messages = 0
+{%- endif %}
 
         # Billing — best-effort, only if tables exist + billing on
         credits_30d = 0
@@ -136,7 +143,9 @@ class AdminService:
 
 {%- elif cookiecutter.use_mongodb %}
 
+{%- if cookiecutter.use_ai %}
 from app.db.models.conversation import Conversation, Message
+{%- endif %}
 from app.db.models.user import User
 
 logger = logging.getLogger(__name__)
@@ -160,8 +169,13 @@ class AdminService:
         except Exception:  # noqa: BLE001
             logger.exception("admin_stats_active_users_query_failed")
 
+{%- if cookiecutter.use_ai %}
         total_conversations = await Conversation.find().count()
         total_messages = await Message.find().count()
+{%- else %}
+        total_conversations = 0
+        total_messages = 0
+{%- endif %}
 
         return {
             "total_users": int(total_users),

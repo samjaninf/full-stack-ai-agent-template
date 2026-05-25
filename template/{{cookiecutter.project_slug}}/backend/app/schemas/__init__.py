@@ -14,7 +14,7 @@ from app.schemas.user import UserCreate, UserRead, UserUpdate
 
 from app.schemas.session import SessionRead, SessionListResponse, LogoutAllResponse
 {%- endif %}
-{%- if cookiecutter.use_database %}
+{%- if cookiecutter.use_ai %}
 {%- set _ = schemas.extend(["ConversationCreate", "ConversationRead", "ConversationUpdate", "MessageCreate", "MessageRead", "ToolCallRead"]) %}
 
 from app.schemas.conversation import (

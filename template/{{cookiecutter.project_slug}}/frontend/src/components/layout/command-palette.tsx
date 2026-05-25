@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Command } from "cmdk";
 import {
+{%- if cookiecutter.use_ai %}
   Activity,
+{%- endif %}
   ArrowRight,
   BookOpen,
   Building2,
@@ -16,7 +18,9 @@ import {
   Plus,
   Search,
   Settings,
+{%- if cookiecutter.use_ai %}
   Star,
+{%- endif %}
   UserCircle,
   Users,
 } from "lucide-react";
@@ -147,6 +151,7 @@ export function CommandPalette() {
           />
         </Group>
 
+{%- if cookiecutter.use_ai %}
         {user?.role === "admin" && (
           <Group heading="Admin">
             <PaletteItem
@@ -161,6 +166,7 @@ export function CommandPalette() {
             />
           </Group>
         )}
+{%- endif %}
 
         <Group heading="Account">
           <PaletteItem

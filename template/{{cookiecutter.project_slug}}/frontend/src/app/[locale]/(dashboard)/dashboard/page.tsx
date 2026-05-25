@@ -9,13 +9,17 @@ import {
   CheckCircle,
   CreditCard,
   Database,
+{%- if cookiecutter.use_ai %}
   List,
+{%- endif %}
   MessageSquare,
   Search,
 {%- if cookiecutter.enable_credits_system %}
   Sparkles,
 {%- endif %}
+{%- if cookiecutter.use_ai %}
   Star,
+{%- endif %}
   XCircle,
 } from "lucide-react";
 
@@ -371,6 +375,7 @@ export default function DashboardPage() {
 
       <QuickActions />
 
+{%- if cookiecutter.use_ai %}
       {/* Admin row */}
       {user?.role === "admin" && (
         <div>
@@ -393,6 +398,7 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+{%- endif %}
     </div>
   );
 }
@@ -409,6 +415,7 @@ function SearchHint() {
   );
 }
 
+{%- if cookiecutter.use_ai %}
 function AdminTile({
   icon: Icon,
   label,
@@ -435,3 +442,4 @@ function AdminTile({
     </Link>
   );
 }
+{%- endif %}

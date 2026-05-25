@@ -157,11 +157,13 @@ export default function AdminOverviewPage() {
             icon={Activity}
             featured
           />
+{%- if cookiecutter.use_ai %}
           <StatCard
             label="Conversations"
             value={(stats?.total_conversations ?? 0).toLocaleString()}
             icon={MessageSquare}
           />
+{%- endif %}
           <StatCard
             label="MRR"
             value={
@@ -186,12 +188,14 @@ export default function AdminOverviewPage() {
           title="Manage users"
           description="Search, suspend, impersonate"
         />
+{%- if cookiecutter.use_ai %}
         <QuickLink
           href="/admin/conversations"
           icon={MessageSquare}
           title="Browse chats"
           description="All conversations across users"
         />
+{%- endif %}
         <QuickLink
           href="/admin/stripe-events"
           icon={CreditCard}

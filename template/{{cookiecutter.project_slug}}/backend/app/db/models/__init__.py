@@ -12,15 +12,17 @@ from app.db.models.user import User
 {%- set _ = models.append("Session") %}
 from app.db.models.session import Session
 {%- endif %}
+{%- if cookiecutter.use_ai %}
 {%- set _ = models.extend(["Conversation", "Message", "ToolCall"]) %}
 from app.db.models.conversation import Conversation, Message, ToolCall
+{%- endif %}
 {%- if cookiecutter.enable_webhooks %}
 {%- set _ = models.extend(["Webhook", "WebhookDelivery"]) %}
 from app.db.models.webhook import Webhook, WebhookDelivery
 {%- endif %}
 {%- set _ = models.append("ChatFile") %}
 from app.db.models.chat_file import ChatFile
-{%- if cookiecutter.use_jwt %}
+{%- if cookiecutter.use_jwt and cookiecutter.use_ai %}
 {%- set _ = models.append("MessageRating") %}
 from app.db.models.message_rating import MessageRating
 {%- endif %}
@@ -32,7 +34,7 @@ from app.db.models.sync_log import SyncLog
 {%- set _ = models.append("SyncSource") %}
 from app.db.models.sync_source import SyncSource
 {%- endif %}
-{%- if cookiecutter.use_jwt %}
+{%- if cookiecutter.use_jwt and cookiecutter.use_ai %}
 {%- set _ = models.append("ConversationShare") %}
 from app.db.models.conversation_share import ConversationShare
 {%- endif %}
@@ -55,7 +57,7 @@ from app.db.models.audit_log import AppAdminAuditLog
 {%- set _ = models.append("KnowledgeBase") %}
 from app.db.models.knowledge_base import KnowledgeBase
 {%- endif %}
-{%- if cookiecutter.use_auth and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
+{%- if cookiecutter.use_auth and cookiecutter.use_ai and (cookiecutter.use_postgresql or cookiecutter.use_sqlite) %}
 {%- set _ = models.append("UserSlashCommand") %}
 from app.db.models.user_slash_command import UserSlashCommand
 {%- endif %}
