@@ -155,7 +155,7 @@ nav:
   - Deployment: deployment.md
   - Observability: observability.md
   - Development: development.md
-  - Changelog: changelog.md
+  - Changelog: CHANGELOG.md
 
 validation:
   nav:
