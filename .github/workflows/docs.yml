@@ -32,4 +32,7 @@ jobs:
         run: uv sync --extra docs
 
       - name: Deploy to GitHub Pages
-        run: uv run mkdocs gh-deploy --force
+        # --no-history replaces gh-pages with a single fresh commit each run.
+        # Avoids the "remote: fatal error in commit_refs" rejection we hit
+        # when the branch accumulates churn / hits a server-side limit.
+        run: uv run mkdocs gh-deploy --force --no-history
