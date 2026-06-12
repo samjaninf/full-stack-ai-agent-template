@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.11] - 2026-06-12
+
+### Added
+
+- **AntV advanced-diagram tools + interactive maps** (`enable_antv_charts`, `--antv-charts`) — adds an `mcp-server-chart` Docker sidecar exposing AntV diagram tools (flowchart, mind-map, org-chart, sankey, waterfall, funnel, treemap, radar, histogram, boxplot, dual-axes) and a native `create_map` tool (Leaflet/OpenStreetMap) with a typed `MapMarker` schema that prevents empty-marker validation errors from weaker models. `create_map` is wired into all 6 agent frameworks; the AntV diagrams render server-side via the sidecar. Web chat renders maps with `react-leaflet` (`MapMessage`/`MapLeaflet`) and AntV diagrams as images in the tool-call card. Opt-in and profile-gated — `ENABLE_ANTV_CHARTS=false` by default, sidecar started with `docker compose --profile antv up -d`; for prod self-host GPT-Vis-SSR via `ANTV_VIS_REQUEST_SERVER` instead of AntV's public render backend (#83)
+- **`ask_user` tool** (PydanticAI) — the agent can pause a run to put one or more questions to the user and resume with their answers, for intake/setup flows and mid-run clarifications. Backed by a WebSocket pause/resume in `AgentSession` and an interactive multi-step `QuestionPrompt` card in the frontend (numbered options, free-form answers, skip). System-prompt guidance steers the model to use it only when a missing detail would genuinely change what it does next (#88)
+- **`run_python` code execution** (`enable_code_execution`, `--code-execution`, PydanticAI only) — a `run_python` tool backed by the `pydantic-monty` sandboxed interpreter. In one tool turn the model can compute projections/aggregations and call `create_chart`/`create_map`/`current_datetime` directly from inside the sandbox; visualizations created in-code stream to the session as live, persisted interactive cards (the same `tool_call`/`tool_result` pair as a direct call). Restricted stdlib (`math`, `asyncio`, `json`, `datetime`, `re`); activated at runtime with `ENABLE_CODE_EXECUTION=true`. Temporary shim until PydanticAI's official `CodeExecutionToolset` ships (#88)
+- **Skills system** (`enable_skills`, `--skills`, PydanticAI only) — a `pydantic-ai-skills` `SkillsToolset` that loads `SKILL.md` files from `backend/skills/` as agent tools (the model picks a skill, then follows its instructions). Ships the loader only — drop your own skills in; the toolset no-ops when the directory is empty. Frontend renders `load_skill`/`list_skills` tool calls as clean skill cards. Pairs with code execution for skills that compute (#88)
+
+### Fixed
+
+- **MCP connection leak in CrewAI** — `get_antv_crewai_tools` now memoizes the started MCP adapter so it's started once per process, not once per request (#83)
+- **Per-request event-loop blocking in LangChain/LangGraph/DeepAgents** — AntV tool discovery is memoized so `_run_sync` only blocks on the first request (#83)
+- **antvis-chart Docker healthcheck** — plain `wget` was rejected by the streamable-HTTP endpoint; replaced with a `node` one-liner. Added coordinate-bounds validation to `MapSpec._validate_center` (matching per-marker validation) and removed the dead `parse_map_spec` export (#83)
+- **Streamed tool-call args could be a raw string** — `agent_session` now uses `args_as_dict(raise_if_invalid=False)` so tool-call cards always receive a dict; a stray/duplicate `ask_user_response` frame (e.g. after a reconnect) is dropped instead of surfacing a spurious "Empty message" error (#88)
+
+### Changed
+
+- **Generated-project ruff tests run via `uvx`** — `test_template_integration.py` / `test_message_ratings.py` invoke `uvx ruff` from the project's `backend/` dir (matching the post-gen hook) instead of `uv run ruff`, avoiding a stray `VIRTUAL_ENV` breaking local runs. New matrix configs `pydantic_ai_code_execution` and `pydantic_ai_skills` so both new paths are linted + type-checked in CI (#88)
+
+### Removed
+
+- **`ai_agent_test/` generated snapshot** — removed the 710-file generated project that was committed to the repo root; it only served to confuse Renovate and tooling (the `template/` source is the durable artifact). Added to `.gitignore`
+
+### Dependencies
+
+- `pydantic-monty>=0.0.18` and `pydantic-ai-skills>=0.11.0` added to generated backends when `enable_code_execution` / `enable_skills` are on; `react-leaflet` added to the template frontend and an `mcp-server-chart` sidecar to the compose files when `enable_antv_charts` is on
+
 ## [0.2.10] - 2026-05-27
 
 ### Added
