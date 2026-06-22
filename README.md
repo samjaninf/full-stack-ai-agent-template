@@ -242,7 +242,11 @@ Use `make help` to see all available Makefile shortcuts.
 
 > The videos below are best viewed on GitHub. On other viewers, see the [Screenshots](#-screenshots) gallery.
 
-**Live AI chat** — streaming responses, tool calls, charts, and a live plan/task checklist:
+**AI chat** — streaming responses with tool calls, reasoning view, and ask-user pauses:
+
+<video src="https://github.com/vstorm-co/full-stack-ai-agent-template/raw/main/assets/new3/chat_demo.mp4" controls muted width="100%"></video>
+
+**Plan & tasks** — sticky plan/task checklist updating live as the agent works through steps:
 
 <video src="https://github.com/vstorm-co/full-stack-ai-agent-template/raw/main/assets/new3/chat_demo_with_tasks.mp4" controls muted width="100%"></video>
 
@@ -291,10 +295,6 @@ The chat UI streams responses over WebSocket and renders each tool call as a pur
 ![Chat reasoning and answered questions](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/new3/chat_answered_questions_and_thinking.png)
 
 ### Marketing Site
-
-**Landing Page** — Full-page marketing site with hero, features breakdown, testimonials, pricing preview, and FAQ. Generated with the `enable_marketing_site` option.
-
-![Landing Page](https://raw.githubusercontent.com/vstorm-co/full-stack-ai-agent-template/main/assets/new3/landing_full.png)
 
 **Pricing** — Three-tier pricing page with monthly/annual toggle. Pulls live plan data from Stripe when connected; shows template plans otherwise.
 
